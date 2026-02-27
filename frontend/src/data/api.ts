@@ -145,17 +145,23 @@ export const dataApi = {
       if (preset === 'daily' || (preset === 'custom' && differenceInDays(endDate, startDate) <= 14)) {
         leadsTrend = eachDayOfInterval({ start: startDate, end: endDate }).map(day => ({
           label: format(day, 'MMM dd'),
-          leads: dates.filter(d => isSameDay(d, day)).length
+          leads: dates.filter(d => isSameDay(d, day)).length,
+          from: format(startOfDay(day), 'yyyy-MM-dd'),
+          to: format(endOfDay(day), 'yyyy-MM-dd')
         }));
       } else if (preset === 'weekly' || preset === 'monthly' || (preset === 'custom' && differenceInDays(endDate, startDate) <= 90)) {
         leadsTrend = eachWeekOfInterval({ start: startDate, end: endDate }).map(week => ({
           label: `Week ${format(week, 'w')}`,
-          leads: dates.filter(d => isSameWeek(d, week)).length
+          leads: dates.filter(d => isSameWeek(d, week)).length,
+          from: format(startOfWeek(week, { weekStartsOn: 1 }), 'yyyy-MM-dd'),
+          to: format(endOfWeek(week, { weekStartsOn: 1 }), 'yyyy-MM-dd')
         }));
       } else {
         leadsTrend = eachMonthOfInterval({ start: startDate, end: endDate }).map(month => ({
           label: format(month, 'MMM yy'),
-          leads: dates.filter(d => isSameMonth(d, month)).length
+          leads: dates.filter(d => isSameMonth(d, month)).length,
+          from: format(startOfMonth(month), 'yyyy-MM-dd'),
+          to: format(endOfMonth(month), 'yyyy-MM-dd')
         }));
       }
 
@@ -165,7 +171,7 @@ export const dataApi = {
     }
   },
 
-  fetchLeads: async ({ search = '', status = 'all', worked = 'all', limit = 100, filters }: { search?: string, status?: string, worked?: string, limit?: number, filters?: DashboardFilters }) => {
+  fetchLeads: async ({ search = '', status = 'all', worked = 'all', stage = 'all', limit = 100, filters }: { search?: string, status?: string, worked?: string, stage?: string, limit?: number, filters?: DashboardFilters }) => {
     try {
       let query = supabase.from(T_INSIGHTS).select('*');
       
@@ -214,6 +220,7 @@ export const dataApi = {
       if (status !== 'all') leads = leads.filter(l => l.status === status);
       if (worked === 'true') leads = leads.filter(l => l.worked_flag);
       if (worked === 'false') leads = leads.filter(l => !l.worked_flag);
+      if (stage !== 'all') leads = leads.filter(l => l.lead_stage?.toLowerCase() === stage.toLowerCase());
 
       const unique = new Map();
       leads.sort((a, b) => new Date(b.ts_i).getTime() - new Date(a.ts_i).getTime()).forEach(l => {

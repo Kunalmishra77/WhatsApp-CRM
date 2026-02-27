@@ -9,6 +9,8 @@ import { ChartContainer } from '../components/ui/chart-container';
 import { useDashboardFilters } from '../state/dashboardFilterStore';
 import { RangeDropdown } from '../components/RangeDropdown';
 import { getLabel } from '../utils/dateRange';
+import { buildLeadsUrl } from '../utils/navigation';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -35,6 +37,18 @@ export default function Dashboard() {
     .sort((a, b) => b.lead_score - a.lead_score)
     .slice(0, 6);
 
+  const handleStatClick = (type?: string, customRange?: { from: string, to: string }) => {
+    const drilldownFilters = customRange 
+      ? { ...filters, range: customRange }
+      : filters;
+    const url = buildLeadsUrl(drilldownFilters, type ? { type } : {});
+    navigate(url);
+    toast.info(`Drilling down into ${type || 'leads'}`, { 
+      description: customRange ? `${customRange.from} to ${customRange.to}` : getLabel(filters.preset, filters.range),
+      position: 'bottom-center' 
+    });
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-10">
       
@@ -58,10 +72,10 @@ export default function Dashboard() {
 
       {/* KPI Grid */}
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Total Leads" value={stats?.totalLeads} icon={Users} variant="teal" loading={statsLoading} />
-        <StatCard title="Hot Leads (24h)" value={stats?.newLeadsToday} icon={Zap} variant="danger" loading={statsLoading} />
-        <StatCard title="Avg Lead Score" value={72} icon={TrendingUp} variant="warning" loading={statsLoading} />
-        <StatCard title="Converted" value={stats?.converted} icon={Clock} variant="info" loading={statsLoading} />
+        <StatCard title="Total Leads" value={stats?.totalLeads} icon={Users} variant="teal" loading={statsLoading} onClick={() => handleStatClick()} />
+        <StatCard title="Hot Leads (24h)" value={stats?.newLeadsToday} icon={Zap} variant="danger" loading={statsLoading} onClick={() => handleStatClick('Hot')} />
+        <StatCard title="Avg Lead Score" value={72} icon={TrendingUp} variant="warning" loading={statsLoading} onClick={() => handleStatClick()} />
+        <StatCard title="Converted" value={stats?.converted} icon={Clock} variant="info" loading={statsLoading} onClick={() => handleStatClick('Converted')} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
@@ -85,7 +99,15 @@ export default function Dashboard() {
               ) : (
                 <ChartContainer height={280}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={charts?.leadsTrend || []}>
+                    <AreaChart 
+                      data={charts?.leadsTrend || []}
+                      onClick={(data: any) => {
+                        if (data?.activePayload?.[0]?.payload) {
+                          const bucket = data.activePayload[0].payload;
+                          handleStatClick(undefined, { from: bucket.from, to: bucket.to });
+                        }
+                      }}
+                    >
                       <defs>
                         <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="hsl(var(--accent-main))" stopOpacity={0.3}/>
@@ -99,7 +121,16 @@ export default function Dashboard() {
                         contentStyle={{ backgroundColor: 'hsl(var(--bg-surface-raised))', border: '1px solid hsl(var(--border-strong))', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
                         itemStyle={{ color: 'hsl(var(--text-main))', fontSize: '12px', fontWeight: 'bold' }}
                       />
-                      <Area type="monotone" dataKey="leads" stroke="hsl(var(--accent-main))" strokeWidth={3} fillOpacity={1} fill="url(#colorLeads)" />
+                      <Area 
+                        type="monotone" 
+                        dataKey="leads" 
+                        stroke="hsl(var(--accent-main))" 
+                        strokeWidth={3} 
+                        fillOpacity={1} 
+                        fill="url(#colorLeads)" 
+                        activeDot={{ r: 6 }}
+                        className="cursor-pointer"
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 </ChartContainer>
@@ -116,7 +147,16 @@ export default function Dashboard() {
               <div className="w-full h-full absolute inset-0 flex items-center justify-center">
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
-                    <Pie data={stats?.stageDistro || []} innerRadius={75} outerRadius={100} paddingAngle={8} dataKey="value" stroke="none">
+                    <Pie 
+                      data={stats?.stageDistro || []} 
+                      innerRadius={75} 
+                      outerRadius={100} 
+                      paddingAngle={8} 
+                      dataKey="value" 
+                      stroke="none"
+                      onClick={(data: any) => handleStatClick(data.name)}
+                      className="cursor-pointer"
+                    >
                       {stats?.stageDistro?.map((_: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={['hsl(var(--accent-main))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--danger))'][index % 4]} />
                       ))}
@@ -133,7 +173,11 @@ export default function Dashboard() {
 
            <div className="mt-8 grid grid-cols-2 gap-3">
               {(stats?.stageDistro || []).map((entry: any, i: number) => (
-                <div key={i} className="flex items-center gap-2 p-2 rounded-xl bg-[hsl(var(--bg-surface-raised))]/50 border border-[hsl(var(--border-strong))]">
+                <div 
+                  key={i} 
+                  onClick={() => handleStatClick(entry.name)}
+                  className="flex items-center gap-2 p-2 rounded-xl bg-[hsl(var(--bg-surface-raised))]/50 border border-[hsl(var(--border-strong))] cursor-pointer hover:border-[hsl(var(--accent-main))] transition-all"
+                >
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ['hsl(var(--accent-main))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--danger))'][i % 4] }}></div>
                   <div className="flex flex-col">
                     <span className="text-[9px] font-black text-[hsl(var(--text-dim))] uppercase tracking-tighter">{entry.name}</span>
@@ -207,7 +251,7 @@ export default function Dashboard() {
   );
 }
 
-const StatCard = ({ title, value, icon: Icon, variant = 'teal', loading }: any) => {
+const StatCard = ({ title, value, icon: Icon, variant = 'teal', loading, onClick }: any) => {
   const colors: Record<string, string> = {
     teal: 'text-[hsl(var(--accent-main))] bg-[hsl(var(--accent-dim))] border-[hsl(var(--accent-glow))]',
     danger: 'text-[hsl(var(--danger))] bg-[hsl(var(--danger))/0.1] border-[hsl(var(--danger))/0.2]',
@@ -216,7 +260,14 @@ const StatCard = ({ title, value, icon: Icon, variant = 'teal', loading }: any) 
   };
 
   return (
-    <motion.div whileHover={{ y: -4 }} className="surface-glass inner-glow rounded-[2rem] p-6 shadow-lg relative overflow-hidden group border-[hsl(var(--border-subtle))] transition-all hover:border-[hsl(var(--border-strong))]">
+    <motion.div 
+      whileHover={{ y: -4 }} 
+      onClick={onClick}
+      className={cn(
+        "surface-glass inner-glow rounded-[2rem] p-6 shadow-lg relative overflow-hidden group border-[hsl(var(--border-subtle))] transition-all hover:border-[hsl(var(--border-strong))]",
+        onClick && "cursor-pointer"
+      )}
+    >
       <div className="flex justify-between items-start mb-6 relative z-10">
         <div className={cn("p-3 rounded-2xl border shadow-sm transition-transform group-hover:scale-110", colors[variant])}>
           <Icon size={22} strokeWidth={2.5} />

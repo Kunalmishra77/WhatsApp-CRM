@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dataApi } from '../data/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { formatPhoneIndian, cn } from '../lib/utils';
-import { Search, ChevronLeft, ChevronRight, Download, CheckCircle2, Circle, MessageCircle, MoreHorizontal, Zap, Filter, Smile, Meh, Frown } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Download, CheckCircle2, Circle, MessageCircle, MoreHorizontal, Zap, Filter, Smile, Meh, Frown, Calendar } from 'lucide-react';
 import { CustomDropdown } from '../components/ui/dropdown';
 import { toast } from 'sonner';
+import { parseLeadsUrl } from '../utils/navigation';
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All Statuses' },
@@ -23,18 +24,41 @@ const WORKED_OPTIONS = [
   { value: 'false', label: 'Unworked Only' },
 ];
 
+const STAGE_OPTIONS = [
+  { value: 'all', label: 'All Stages' },
+  { value: 'Hot', label: 'Hot Leads' },
+  { value: 'Warm', label: 'Warm Leads' },
+  { value: 'Cold', label: 'Cold Leads' },
+];
+
 export default function LeadsHub() {
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [status, setStatus] = useState('all');
-  const [worked, setWorked] = useState('all');
-  const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
 
+  // Parse URL params
+  const { filters: urlFilters, type: urlType } = useMemo(() => parseLeadsUrl(location.search), [location.search]);
+
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState(() => {
+    if (urlType && STATUS_OPTIONS.some(opt => opt.value.toLowerCase() === urlType.toLowerCase())) {
+      return STATUS_OPTIONS.find(opt => opt.value.toLowerCase() === urlType.toLowerCase())?.value || 'all';
+    }
+    return 'all';
+  });
+  const [worked, setWorked] = useState('all');
+  const [stage, setStage] = useState(() => {
+    if (urlType && STAGE_OPTIONS.some(opt => opt.value.toLowerCase() === urlType.toLowerCase())) {
+      return STAGE_OPTIONS.find(opt => opt.value.toLowerCase() === urlType.toLowerCase())?.value || 'all';
+    }
+    return 'all';
+  });
+  const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
+
   const { data: leads, isLoading } = useQuery({
-    queryKey: ['leads', { search, page, status, worked }],
-    queryFn: async () => await dataApi.fetchLeads({ search, status, worked, limit: 100 })
+    queryKey: ['leads', { search, page, status, worked, stage, urlFilters }],
+    queryFn: async () => await dataApi.fetchLeads({ search, status, worked, stage, limit: 100, filters: urlFilters })
   });
 
   // Simple client-side pagination for this spec
@@ -83,29 +107,40 @@ export default function LeadsHub() {
       
       {/* Header & Filters */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8 shrink-0">
-        <div>
+        <div className="flex flex-col gap-1">
           <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--text-main))]">Leads <span className="font-light text-[hsl(var(--text-muted))]">Insights</span></h1>
-          <p className="text-sm font-medium text-[hsl(var(--text-dim))] mt-1">
-            Managing <span className="text-[hsl(var(--text-main))] font-bold">{leads?.length || 0}</span> synthesized leads.
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-[hsl(var(--text-dim))]">
+              Managing <span className="text-[hsl(var(--text-main))] font-bold">{leads?.length || 0}</span> synthesized leads.
+            </p>
+            {urlFilters?.range?.from && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[hsl(var(--accent-dim))]/30 border border-[hsl(var(--accent-glow))]/20 text-[9px] font-bold text-[hsl(var(--accent-main))] uppercase tracking-tighter">
+                <Calendar size={10} /> {urlFilters.range.from} — {urlFilters.range.to}
+              </div>
+            )}
+          </div>
         </div>
         
-        <div className="flex items-center gap-3 surface-card p-2 rounded-2xl border border-[hsl(var(--border-strong))] shadow-lg">
-          <div className="relative group w-64 ml-2">
+        <div className="flex items-center gap-3 surface-card p-2 rounded-2xl border border-[hsl(var(--border-strong))] shadow-lg overflow-x-auto no-scrollbar">
+          <div className="relative group w-48 ml-2 flex-shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--text-dim))] group-focus-within:text-[hsl(var(--accent-main))] transition-colors" size={16} />
             <input
-              type="text" placeholder="Search name or phone..." value={search}
+              type="text" placeholder="Search..." value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="w-full bg-transparent border-none py-2 pl-10 pr-4 text-sm font-medium outline-none transition-all placeholder:text-[hsl(var(--text-dim))] text-[hsl(var(--text-main))]"
             />
           </div>
-          <div className="w-px h-6 bg-[hsl(var(--border-strong))]"></div>
-          <CustomDropdown options={STATUS_OPTIONS} value={status} onChange={(v) => { setStatus(v); setPage(1); }} placeholder="Status" className="w-40 border-none bg-transparent" />
-          <div className="w-px h-6 bg-[hsl(var(--border-strong))]"></div>
-          <CustomDropdown options={WORKED_OPTIONS} value={worked} onChange={(v) => { setWorked(v); setPage(1); }} placeholder="Worked" className="w-40 border-none bg-transparent" />
-          <div className="w-px h-6 bg-[hsl(var(--border-strong))]"></div>
-          <button onClick={() => handleExport('csv')} className="px-3 text-xs font-bold text-[hsl(var(--text-muted))] hover:text-white transition-colors">CSV</button>
-          <button onClick={() => handleExport('xlsx')} className="px-3 pr-4 text-xs font-bold text-[hsl(var(--text-muted))] hover:text-[hsl(var(--success))] transition-colors">XLSX</button>
+          <div className="w-px h-6 bg-[hsl(var(--border-strong))] flex-shrink-0"></div>
+          <CustomDropdown options={STAGE_OPTIONS} value={stage} onChange={(v) => { setStage(v); setPage(1); }} placeholder="Stage" className="w-36 border-none bg-transparent" />
+          <div className="w-px h-6 bg-[hsl(var(--border-strong))] flex-shrink-0"></div>
+          <CustomDropdown options={STATUS_OPTIONS} value={status} onChange={(v) => { setStatus(v); setPage(1); }} placeholder="Status" className="w-36 border-none bg-transparent" />
+          <div className="w-px h-6 bg-[hsl(var(--border-strong))] flex-shrink-0"></div>
+          <CustomDropdown options={WORKED_OPTIONS} value={worked} onChange={(v) => { setWorked(v); setPage(1); }} placeholder="Worked" className="w-36 border-none bg-transparent" />
+          <div className="w-px h-6 bg-[hsl(var(--border-strong))] flex-shrink-0"></div>
+          <div className="flex items-center">
+            <button onClick={() => handleExport('csv')} className="px-3 text-xs font-bold text-[hsl(var(--text-muted))] hover:text-white transition-colors">CSV</button>
+            <button onClick={() => handleExport('xlsx')} className="px-3 pr-4 text-xs font-bold text-[hsl(var(--text-muted))] hover:text-[hsl(var(--success))] transition-colors">XLSX</button>
+          </div>
         </div>
       </div>
 
