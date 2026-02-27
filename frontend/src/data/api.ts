@@ -1,5 +1,20 @@
 import { supabase } from '../lib/supabase';
 import * as XLSX from 'xlsx';
+import { DashboardFilters, DatePreset } from '../types/filters';
+import { 
+  parseISO, 
+  format, 
+  eachDayOfInterval, 
+  isSameDay, 
+  startOfDay, 
+  endOfDay,
+  subDays,
+  eachWeekOfInterval,
+  eachMonthOfInterval,
+  isSameWeek,
+  isSameMonth,
+  differenceInDays
+} from 'date-fns';
 
 /** 
  * ERROR FIX TOGGLE:
@@ -75,14 +90,24 @@ const normalizeConv = (row: any) => {
 };
 
 export const dataApi = {
-  fetchDashboardKPIs: async () => {
+  fetchDashboardKPIs: async (filters: DashboardFilters) => {
     try {
+      const { from, to } = filters.range;
       const todayStr = new Date().toISOString().split('T')[0];
-      const { data: insightsData } = await supabase.from(T_INSIGHTS).select('*');
+      
+      // Filter by Timestamp. Using 'gte' and 'lte'.
+      // Note: We'll attempt to filter on 'Timestamp' as it's the primary field in normalizeInsight.
+      let query = supabase.from(T_INSIGHTS).select('*')
+        .gte('Timestamp', `${from}T00:00:00`)
+        .lte('Timestamp', `${to}T23:59:59`);
+      
+      const { data: insightsData } = await query;
       
       let states: any[] = [];
       if (ENABLE_EXTENDED_CRM_FEATURES) {
-        const { data } = await supabase.from(T_STATE).select('*');
+        const { data } = await supabase.from(T_STATE).select('*')
+          .gte('updated_at', from)
+          .lte('updated_at', to);
         states = data || [];
       }
 
@@ -103,9 +128,52 @@ export const dataApi = {
     }
   },
 
-  fetchLeads: async ({ search = '', status = 'all', worked = 'all', limit = 100 }) => {
+  fetchAnalyticsCharts: async (filters: DashboardFilters) => {
     try {
-      const { data: qInsights } = await supabase.from(T_INSIGHTS).select('*').limit(limit);
+      const { from, to } = filters.range;
+      const { data: insightsData } = await supabase.from(T_INSIGHTS).select('Timestamp')
+        .gte('Timestamp', `${from}T00:00:00`)
+        .lte('Timestamp', `${to}T23:59:59`);
+
+      const dates = (insightsData || []).map(d => parseISO(d.Timestamp));
+      const startDate = parseISO(from);
+      const endDate = parseISO(to);
+      
+      let leadsTrend: any[] = [];
+      const preset = filters.preset;
+
+      if (preset === 'daily' || (preset === 'custom' && differenceInDays(endDate, startDate) <= 14)) {
+        leadsTrend = eachDayOfInterval({ start: startDate, end: endDate }).map(day => ({
+          label: format(day, 'MMM dd'),
+          leads: dates.filter(d => isSameDay(d, day)).length
+        }));
+      } else if (preset === 'weekly' || preset === 'monthly' || (preset === 'custom' && differenceInDays(endDate, startDate) <= 90)) {
+        leadsTrend = eachWeekOfInterval({ start: startDate, end: endDate }).map(week => ({
+          label: `Week ${format(week, 'w')}`,
+          leads: dates.filter(d => isSameWeek(d, week)).length
+        }));
+      } else {
+        leadsTrend = eachMonthOfInterval({ start: startDate, end: endDate }).map(month => ({
+          label: format(month, 'MMM yy'),
+          leads: dates.filter(d => isSameMonth(d, month)).length
+        }));
+      }
+
+      return { leadsTrend };
+    } catch (e) {
+      return { leadsTrend: [] };
+    }
+  },
+
+  fetchLeads: async ({ search = '', status = 'all', worked = 'all', limit = 100, filters }: { search?: string, status?: string, worked?: string, limit?: number, filters?: DashboardFilters }) => {
+    try {
+      let query = supabase.from(T_INSIGHTS).select('*');
+      
+      if (filters) {
+        query = query.gte('Timestamp', `${filters.range.from}T00:00:00`).lte('Timestamp', `${filters.range.to}T23:59:59`);
+      }
+      
+      const { data: qInsights } = await query.limit(limit);
       
       let stateMap = new Map();
       let extMap = new Map();
@@ -138,6 +206,25 @@ export const dataApi = {
           lead_comments: { length: commentCounts[phone] || 0 }
         });
       });
+
+      if (search) {
+        const s = search.toLowerCase();
+        leads = leads.filter(l => l.name.toLowerCase().includes(s) || l.phone.includes(s) || l.concern.toLowerCase().includes(s));
+      }
+      if (status !== 'all') leads = leads.filter(l => l.status === status);
+      if (worked === 'true') leads = leads.filter(l => l.worked_flag);
+      if (worked === 'false') leads = leads.filter(l => !l.worked_flag);
+
+      const unique = new Map();
+      leads.sort((a, b) => new Date(b.ts_i).getTime() - new Date(a.ts_i).getTime()).forEach(l => {
+        if (!unique.has(l.phone)) unique.set(l.phone, l);
+      });
+
+      return Array.from(unique.values());
+    } catch (e) {
+      return [];
+    }
+  },
 
       if (search) {
         const s = search.toLowerCase();

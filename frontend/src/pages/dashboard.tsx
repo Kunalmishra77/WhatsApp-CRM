@@ -16,25 +16,19 @@ export default function Dashboard() {
   
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['dashboard-stats', filters],
-    queryFn: async () => await dataApi.fetchDashboardKPIs(), // Pass filters here when API is ready
+    queryFn: async () => await dataApi.fetchDashboardKPIs(filters),
     refetchInterval: 30000,
+  });
+
+  const { data: charts, isLoading: chartsLoading } = useQuery({
+    queryKey: ['dashboard-charts', filters],
+    queryFn: async () => await dataApi.fetchAnalyticsCharts(filters),
   });
 
   const { data: leads, isLoading: leadsLoading } = useQuery({
     queryKey: ['leads', { limit: 100 }, filters],
-    queryFn: async () => await dataApi.fetchLeads({ limit: 100 }) // Pass filters here when API is ready
+    queryFn: async () => await dataApi.fetchLeads({ limit: 100, filters })
   });
-
-  // Mock trend data for pixel-perfect visualization
-  const trendData = [
-    { day: 'Mon', leads: 42, msgs: 120 },
-    { day: 'Tue', leads: 38, msgs: 98 },
-    { day: 'Wed', leads: 55, msgs: 145 },
-    { day: 'Thu', leads: 62, msgs: 180 },
-    { day: 'Fri', leads: 48, msgs: 110 },
-    { day: 'Sat', leads: 30, msgs: 75 },
-    { day: 'Sun', leads: 25, msgs: 60 },
-  ];
 
   const topFollowUps = (leads || [])
     .filter(l => !l.worked_flag && l.status !== 'Closed' && l.status !== 'Converted')
@@ -84,26 +78,32 @@ export default function Dashboard() {
            </div>
            
            <div className="flex-1 w-full">
-              <ChartContainer height={280}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={trendData}>
-                    <defs>
-                      <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--accent-main))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--accent-main))" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border-strong))" opacity={0.5} />
-                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--text-dim))' }} dy={10} />
-                    <YAxis hide />
-                    <RechartsTooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--bg-surface-raised))', border: '1px solid hsl(var(--border-strong))', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
-                      itemStyle={{ color: 'hsl(var(--text-main))', fontSize: '12px', fontWeight: 'bold' }}
-                    />
-                    <Area type="monotone" dataKey="leads" stroke="hsl(var(--accent-main))" strokeWidth={3} fillOpacity={1} fill="url(#colorLeads)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+              {chartsLoading ? (
+                <div className="w-full h-[280px] flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-[hsl(var(--accent-main))] border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <ChartContainer height={280}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={charts?.leadsTrend || []}>
+                      <defs>
+                        <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--accent-main))" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="hsl(var(--accent-main))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border-strong))" opacity={0.5} />
+                      <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'hsl(var(--text-dim))' }} dy={10} />
+                      <YAxis hide />
+                      <RechartsTooltip 
+                        contentStyle={{ backgroundColor: 'hsl(var(--bg-surface-raised))', border: '1px solid hsl(var(--border-strong))', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
+                        itemStyle={{ color: 'hsl(var(--text-main))', fontSize: '12px', fontWeight: 'bold' }}
+                      />
+                      <Area type="monotone" dataKey="leads" stroke="hsl(var(--accent-main))" strokeWidth={3} fillOpacity={1} fill="url(#colorLeads)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              )}
            </div>
         </div>
 
