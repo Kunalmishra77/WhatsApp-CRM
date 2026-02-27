@@ -1,24 +1,28 @@
 import { useQuery } from '@tanstack/react-query';
 import { dataApi } from '../data/api';
-import { TrendingUp, Users, Clock, AlertCircle, Zap, ArrowRight, Activity, BarChart3 } from 'lucide-react';
+import { TrendingUp, Users, Clock, AlertCircle, Zap, ArrowRight, Activity, BarChart3, Calendar } from 'lucide-react';
 import { formatPhoneIndian, cn } from '../lib/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { motion } from 'framer-motion';
 import { ChartContainer } from '../components/ui/chart-container';
+import { useDashboardFilters } from '../state/dashboardFilterStore';
+import { RangeDropdown } from '../components/RangeDropdown';
+import { getLabel } from '../utils/dateRange';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { filters } = useDashboardFilters();
   
   const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: async () => await dataApi.fetchDashboardKPIs(),
+    queryKey: ['dashboard-stats', filters],
+    queryFn: async () => await dataApi.fetchDashboardKPIs(), // Pass filters here when API is ready
     refetchInterval: 30000,
   });
 
   const { data: leads, isLoading: leadsLoading } = useQuery({
-    queryKey: ['leads', { limit: 100 }],
-    queryFn: async () => await dataApi.fetchLeads({ limit: 100 })
+    queryKey: ['leads', { limit: 100 }, filters],
+    queryFn: async () => await dataApi.fetchLeads({ limit: 100 }) // Pass filters here when API is ready
   });
 
   // Mock trend data for pixel-perfect visualization
@@ -40,13 +44,21 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-10">
       
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-[hsl(var(--text-main))]">Command <span className="font-light text-[hsl(var(--text-muted))]">Center</span></h1>
-          <p className="text-sm font-medium text-[hsl(var(--text-dim))] mt-1">Real-time revenue intelligence & operations.</p>
+          <div className="flex items-center gap-3 mt-1">
+             <p className="text-sm font-medium text-[hsl(var(--text-dim))]">Real-time revenue intelligence & operations.</p>
+             <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[hsl(var(--accent-dim))]/50 border border-[hsl(var(--accent-glow))]/30 text-[9px] font-bold text-[hsl(var(--accent-main))] uppercase tracking-tighter">
+                <Calendar size={10} /> {getLabel(filters.preset, filters.range)}
+             </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(var(--accent-dim))] border border-[hsl(var(--accent-glow))] text-[10px] font-black text-[hsl(var(--accent-main))] uppercase tracking-[0.2em]">
-           <Activity size={12} className="animate-pulse" /> Live Feed Active
+        <div className="flex items-center gap-3">
+          <RangeDropdown />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(var(--accent-dim))] border border-[hsl(var(--accent-glow))] text-[10px] font-black text-[hsl(var(--accent-main))] uppercase tracking-[0.2em]">
+             <Activity size={12} className="animate-pulse" /> Live Feed Active
+          </div>
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { Layout } from './components/layout';
 import { ErrorBoundary } from './components/error-boundary';
+import { DashboardFilterProvider } from './state/dashboardFilterStore';
 
 // Pages
 import Dashboard from './pages/dashboard';
@@ -24,19 +25,21 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="leads" element={<LeadsHub />} />
-              <Route path="leads/:id" element={<LeadDetail />} />
-              <Route path="live-inbox" element={<LiveInbox />} />
-              {/* Fallback routing */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-        <Toaster position="top-right" richColors theme="system" />
+        <DashboardFilterProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="leads" element={<LeadsHub />} />
+                <Route path="leads/:id" element={<LeadDetail />} />
+                <Route path="live-inbox" element={<LiveInbox />} />
+                {/* Fallback routing */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+          <Toaster position="top-right" richColors theme="system" />
+        </DashboardFilterProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
