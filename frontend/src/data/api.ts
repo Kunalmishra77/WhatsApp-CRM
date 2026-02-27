@@ -13,7 +13,11 @@ import {
   eachMonthOfInterval,
   isSameWeek,
   isSameMonth,
-  differenceInDays
+  differenceInDays,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth
 } from 'date-fns';
 
 /** 
@@ -95,8 +99,6 @@ export const dataApi = {
       const { from, to } = filters.range;
       const todayStr = new Date().toISOString().split('T')[0];
       
-      // Filter by Timestamp. Using 'gte' and 'lte'.
-      // Note: We'll attempt to filter on 'Timestamp' as it's the primary field in normalizeInsight.
       let query = supabase.from(T_INSIGHTS).select('*')
         .gte('Timestamp', `${from}T00:00:00`)
         .lte('Timestamp', `${to}T23:59:59`);
@@ -175,7 +177,7 @@ export const dataApi = {
     try {
       let query = supabase.from(T_INSIGHTS).select('*');
       
-      if (filters) {
+      if (filters && filters.range) {
         query = query.gte('Timestamp', `${filters.range.from}T00:00:00`).lte('Timestamp', `${filters.range.to}T23:59:59`);
       }
       
@@ -221,25 +223,6 @@ export const dataApi = {
       if (worked === 'true') leads = leads.filter(l => l.worked_flag);
       if (worked === 'false') leads = leads.filter(l => !l.worked_flag);
       if (stage !== 'all') leads = leads.filter(l => l.lead_stage?.toLowerCase() === stage.toLowerCase());
-
-      const unique = new Map();
-      leads.sort((a, b) => new Date(b.ts_i).getTime() - new Date(a.ts_i).getTime()).forEach(l => {
-        if (!unique.has(l.phone)) unique.set(l.phone, l);
-      });
-
-      return Array.from(unique.values());
-    } catch (e) {
-      return [];
-    }
-  },
-
-      if (search) {
-        const s = search.toLowerCase();
-        leads = leads.filter(l => l.name.toLowerCase().includes(s) || l.phone.includes(s) || l.concern.toLowerCase().includes(s));
-      }
-      if (status !== 'all') leads = leads.filter(l => l.status === status);
-      if (worked === 'true') leads = leads.filter(l => l.worked_flag);
-      if (worked === 'false') leads = leads.filter(l => !l.worked_flag);
 
       const unique = new Map();
       leads.sort((a, b) => new Date(b.ts_i).getTime() - new Date(a.ts_i).getTime()).forEach(l => {

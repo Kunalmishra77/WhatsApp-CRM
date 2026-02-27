@@ -22,7 +22,7 @@ import { DatePreset, DateRange } from '../types/filters';
 export const getRangeFromPreset = (
   preset: DatePreset, 
   now: Date = new Date(), 
-  timezone: string = 'Asia/Kolkata'
+  _timezone: string = 'Asia/Kolkata'
 ): DateRange => {
   // Simple implementation for now (standard JS Date)
   // date-fns doesn't have native TZ support but we can work with standard dates for UTC-safe logic.
@@ -70,7 +70,7 @@ export const getRangeFromPreset = (
 
 export const getLabel = (preset: DatePreset, range: DateRange): string => {
   if (preset === 'custom') {
-    return \\ to \\;
+    return `${range.from} to ${range.to}`;
   }
   
   const labels: Record<DatePreset, string> = {
