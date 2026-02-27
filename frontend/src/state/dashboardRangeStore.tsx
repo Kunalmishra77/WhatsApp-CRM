@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { DatePreset, DateRange, getRangeFromPreset } from '../utils/dateRange';
+import type { DatePreset, DateRange } from '../utils/dateRange';
+import { getRangeFromPreset } from '../utils/dateRange';
 
 interface DashboardRangeContextType {
   preset: DatePreset;

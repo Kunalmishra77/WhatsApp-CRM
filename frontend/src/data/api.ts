@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
-import { DateRange, DatePreset } from '../utils/dateRange';
+import type { DateRange, DatePreset } from '../utils/dateRange';
+import { computeLeadScore } from '../utils/leadScoring';
+import type { ScoringResult, LeadBucket } from '../utils/leadScoring';
 import { 
   parseISO, 
   format, 
@@ -8,7 +10,13 @@ import {
   eachMonthOfInterval,
   isSameDay,
   isSameWeek,
-  isSameMonth
+  isSameMonth,
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth
 } from 'date-fns';
 
 const T_INSIGHTS = 'lead_insights';
@@ -30,6 +38,8 @@ export interface TrendPoint {
   warm: number;
   cold: number;
   converted: number;
+  from: string;
+  to: string;
 }
 
 export interface StagePoint {
@@ -44,6 +54,20 @@ export interface FollowUpLead {
   time: string;
   status: string;
   score: number;
+  scoring?: ScoringResult;
+}
+
+export interface LeadInsightRow {
+  id: string;
+  created_at: string;
+  'User Name': string;
+  'Phone Number': string;
+  concern: string;
+  'lead stage': string;
+  'Conversation Summary': string;
+  sentiment: string;
+  'Action to be taken': string;
+  scoring: ScoringResult;
 }
 
 export const dataApi = {
@@ -57,16 +81,23 @@ export const dataApi = {
 
       if (error) throw error;
 
-      const insights = data || [];
+      const rawInsights = data || [];
+      const insights = rawInsights.map(i => ({
+        ...i,
+        scoring: computeLeadScore(i)
+      }));
+
       const totalLeads = insights.length;
-      
-      const hot = insights.filter(i => i['lead stage']?.toLowerCase() === 'hot').length;
-      const warm = insights.filter(i => i['lead stage']?.toLowerCase() === 'warm').length;
-      const cold = insights.filter(i => i['lead stage']?.toLowerCase() === 'cold').length;
-      const avg = insights.filter(i => i['lead stage']?.toLowerCase() === 'average' || i['lead stage']?.toLowerCase() === 'avg').length;
+      const hot = insights.filter(i => i.scoring.bucket === 'Hot').length;
+      const warm = insights.filter(i => i.scoring.bucket === 'Warm').length;
+      const cold = insights.filter(i => i.scoring.bucket === 'Cold').length;
+      const avg = insights.filter(i => i.scoring.bucket === 'Average').length;
       
       const converted = insights.filter(i => i['lead stage']?.toLowerCase() === 'converted').length;
       const unconverted = totalLeads - converted;
+      
+      const sumScore = insights.reduce((acc, i) => acc + i.scoring.score, 0);
+      const avgScore = totalLeads > 0 ? Math.round(sumScore / totalLeads) : 0;
 
       return {
         totalLeads,
@@ -76,7 +107,7 @@ export const dataApi = {
         avgLeads: avg,
         converted,
         unconverted,
-        avgScore: 72
+        avgScore
       };
     } catch (e) {
       console.error('KPI fetch error:', e);
@@ -88,13 +119,18 @@ export const dataApi = {
     try {
       const { data, error } = await supabase
         .from(T_INSIGHTS)
-        .select('created_at, "lead stage"')
+        .select('*')
         .gte('created_at', `${range.from}T00:00:00Z`)
         .lte('created_at', `${range.to}T23:59:59Z`);
 
       if (error) throw error;
 
-      const insights = data || [];
+      const rawInsights = data || [];
+      const insights = rawInsights.map(i => ({
+        ...i,
+        scoring: computeLeadScore(i)
+      }));
+
       const startDate = parseISO(range.from);
       const endDate = parseISO(range.to);
 
@@ -115,10 +151,22 @@ export const dataApi = {
 
         return {
           name: format(interval, preset === 'daily' ? 'MMM dd' : preset === 'weekly' ? 'dd MMM' : 'MMM yyyy'),
-          hot: bucket.filter(i => i['lead stage']?.toLowerCase() === 'hot').length,
-          warm: bucket.filter(i => i['lead stage']?.toLowerCase() === 'warm').length,
-          cold: bucket.filter(i => i['lead stage']?.toLowerCase() === 'cold').length,
+          hot: bucket.filter(i => i.scoring.bucket === 'Hot').length,
+          warm: bucket.filter(i => i.scoring.bucket === 'Warm').length,
+          cold: bucket.filter(i => i.scoring.bucket === 'Cold').length,
           converted: bucket.filter(i => i['lead stage']?.toLowerCase() === 'converted').length,
+          from: format(
+            preset === 'daily' ? startOfDay(interval) : 
+            preset === 'weekly' ? startOfWeek(interval, { weekStartsOn: 1 }) : 
+            startOfMonth(interval), 
+            'yyyy-MM-dd'
+          ),
+          to: format(
+            preset === 'daily' ? endOfDay(interval) : 
+            preset === 'weekly' ? endOfWeek(interval, { weekStartsOn: 1 }) : 
+            endOfMonth(interval), 
+            'yyyy-MM-dd'
+          ),
         };
       });
     } catch (e) {
@@ -131,30 +179,32 @@ export const dataApi = {
     try {
       const { data, error } = await supabase
         .from(T_INSIGHTS)
-        .select('"lead stage"')
+        .select('*')
         .gte('created_at', `${range.from}T00:00:00Z`)
         .lte('created_at', `${range.to}T23:59:59Z`);
 
       if (error) throw error;
 
-      const insights = data || [];
-      const total = insights.length || 1;
-      
-      const counts = insights.reduce((acc: Record<string, number>, i) => {
-        const stage = i['lead stage'] || 'Unknown';
-        acc[stage] = (acc[stage] || 0) + 1;
-        return acc;
-      }, {});
-
-      return Object.entries(counts).map(([name, value]) => ({
-        name,
-        value: Math.round((value / total) * 100),
-        color: name.toLowerCase() === 'hot' ? '#f43f5e' : 
-               name.toLowerCase() === 'warm' ? '#f59e0b' : 
-               name.toLowerCase() === 'cold' ? '#0ea5e9' : '#10b981'
+      const rawInsights = data || [];
+      const insights = rawInsights.map(i => ({
+        ...i,
+        scoring: computeLeadScore(i)
       }));
+
+      const total = insights.length || 1;
+      const buckets: LeadBucket[] = ['Hot', 'Warm', 'Average', 'Cold'];
+      
+      return buckets.map(b => {
+        const count = insights.filter(i => i.scoring.bucket === b).length;
+        return {
+          name: b,
+          value: Math.round((count / total) * 100),
+          color: b === 'Hot' ? '#f43f5e' : 
+                 b === 'Warm' ? '#f59e0b' : 
+                 b === 'Average' ? '#10b981' : '#0ea5e9'
+        };
+      });
     } catch (e) {
-      console.error('Stage distribution error:', e);
       return [];
     }
   },
@@ -165,21 +215,82 @@ export const dataApi = {
         .from(T_INSIGHTS)
         .select('*')
         .gte('created_at', `${range.from}T00:00:00Z`)
-        .lte('created_at', `${range.to}T23:59:59Z`)
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .lte('created_at', `${range.to}T23:59:59Z`);
 
       if (error) throw error;
 
-      return (data || []).map(i => ({
-        name: i['User Name'] || 'Unknown',
-        phone: i['Phone Number'] || 'N/A',
-        time: format(parseISO(i.created_at), 'hh:mm a'),
-        status: i['lead stage'] || 'Warm',
-        score: Math.floor(Math.random() * 40) + 60
-      }));
+      const rawInsights = data || [];
+      return rawInsights
+        .map(i => {
+          const scoring = computeLeadScore(i);
+          return {
+            name: i['User Name'] || 'Unknown',
+            phone: i['Phone Number'] || 'N/A',
+            time: format(parseISO(i.created_at), 'hh:mm a'),
+            status: scoring.bucket,
+            score: scoring.score,
+            scoring
+          };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
     } catch (e) {
-      console.error('Follow-ups error:', e);
+      return [];
+    }
+  },
+
+  fetchLeads: async (params: { 
+    range: DateRange; 
+    bucket?: string; 
+    status?: string;
+    search?: string;
+    sentiment?: string;
+    missing?: string;
+  }): Promise<LeadInsightRow[]> => {
+    try {
+      const { range, bucket, status, search, sentiment, missing } = params;
+      let query = supabase
+        .from(T_INSIGHTS)
+        .select('*')
+        .gte('created_at', `${range.from}T00:00:00Z`)
+        .lte('created_at', `${range.to}T23:59:59Z`)
+        .order('created_at', { ascending: false });
+
+      if (search) {
+        query = query.or(`"User Name".ilike.%${search}%,"Phone Number".ilike.%${search}%`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      let results = (data || []).map(i => ({
+        ...i,
+        scoring: computeLeadScore(i)
+      }));
+
+      if (bucket && bucket !== 'all') {
+        results = results.filter(r => r.scoring.bucket.toLowerCase() === bucket.toLowerCase());
+      }
+
+      if (status && status !== 'all') {
+        results = results.filter(r => r['lead stage']?.toLowerCase() === status.toLowerCase());
+      }
+
+      if (sentiment && sentiment !== 'all') {
+        results = results.filter(r => r.sentiment?.toLowerCase().includes(sentiment.toLowerCase()));
+      }
+
+      if (missing && missing !== 'all') {
+        if (missing === 'location') {
+          results = results.filter(r => !r.scoring.reasons.some(res => res.includes('Location')));
+        } else if (missing === 'capacity') {
+          results = results.filter(r => !r.scoring.reasons.some(res => res.includes('Capacity')));
+        }
+      }
+
+      return results;
+    } catch (e) {
+      console.error('Leads fetch error:', e);
       return [];
     }
   },

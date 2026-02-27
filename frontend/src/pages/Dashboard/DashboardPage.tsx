@@ -39,11 +39,16 @@ import {
 } from 'recharts';
 import { cn } from '../../lib/utils';
 import { useDashboardRange } from '../../state/dashboardRangeStore';
-import { getLabelForRange, DatePreset } from '../../utils/dateRange';
+import { getLabelForRange } from '../../utils/dateRange';
+import type { DatePreset } from '../../utils/dateRange';
 import { useQuery } from '@tanstack/react-query';
-import { dataApi, KPIStats, TrendPoint, StagePoint, FollowUpLead } from '../../data/api';
+import { dataApi } from '../../data/api';
+import type { KPIStats, TrendPoint, StagePoint, FollowUpLead } from '../../data/api';
+
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const { preset, range, setPreset, setCustomRange } = useDashboardRange();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customDates, setCustomDates] = useState({ from: range.from, to: range.to });
@@ -68,6 +73,17 @@ const DashboardPage: React.FC = () => {
     queryKey: ['dashboard-followups', range],
     queryFn: () => dataApi.fetchTopFollowUps(range),
   });
+
+  const handleStatClick = (bucket?: string) => {
+    const params = new URLSearchParams();
+    params.set('preset', preset);
+    params.set('from', range.from);
+    params.set('to', range.to);
+    if (bucket) params.set('bucket', bucket);
+    
+    navigate(`/leads?${params.toString()}`);
+    toast.success(`Opening ${bucket || 'all'} leads explorer`);
+  };
 
   const { data: funnelData } = useQuery({
     queryKey: ['dashboard-funnel', range],
@@ -107,13 +123,13 @@ const DashboardPage: React.FC = () => {
   };
 
   const kpiCards = [
-    { title: 'Total Leads', value: kpis?.totalLeads ?? '0', change: '+12.5%', isUp: true, icon: Users, color: 'teal' },
-    { title: 'Hot Leads', value: kpis?.hotLeads ?? '0', change: '+8.2%', isUp: true, icon: Flame, color: 'danger' },
-    { title: 'Warm Leads', value: kpis?.warmLeads ?? '0', change: '-2.4%', isUp: false, icon: Zap, color: 'warning' },
-    { title: 'Cold Leads', value: kpis?.coldLeads ?? '0', change: '+1.5%', isUp: true, icon: IceCream, color: 'info' },
-    { title: 'Converted', value: kpis?.converted ?? '0', change: '+18.3%', isUp: true, icon: CheckCircle2, color: 'success' },
-    { title: 'Unconverted', value: kpis?.unconverted ?? '0', change: '+4.1%', isUp: true, icon: XCircle, color: 'zinc' },
-    { title: 'Avg Score', value: kpis?.avgScore ?? '0', change: '+5.2%', isUp: true, icon: TrendingUp, color: 'teal' },
+    { title: 'Total Leads', value: kpis?.totalLeads ?? '0', change: '+12.5%', isUp: true, icon: Users, color: 'teal', bucket: undefined },
+    { title: 'Hot Leads', value: kpis?.hotLeads ?? '0', change: '+8.2%', isUp: true, icon: Flame, color: 'danger', bucket: 'Hot' },
+    { title: 'Warm Leads', value: kpis?.warmLeads ?? '0', change: '-2.4%', isUp: false, icon: Zap, color: 'warning', bucket: 'Warm' },
+    { title: 'Cold Leads', value: kpis?.coldLeads ?? '0', change: '+1.5%', isUp: true, icon: IceCream, color: 'info', bucket: 'Cold' },
+    { title: 'Converted', value: kpis?.converted ?? '0', change: '+18.3%', isUp: true, icon: CheckCircle2, color: 'success', bucket: 'Converted' },
+    { title: 'Unconverted', value: kpis?.unconverted ?? '0', change: '+4.1%', isUp: true, icon: XCircle, color: 'zinc', bucket: undefined },
+    { title: 'Avg Score', value: kpis?.avgScore ?? '0', change: '+5.2%', isUp: true, icon: TrendingUp, color: 'teal', bucket: undefined },
   ];
 
   return (
@@ -152,7 +168,7 @@ const DashboardPage: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            onClick={handleComingSoon}
+            onClick={() => handleStatClick(kpi.bucket)}
             className="cursor-pointer"
           >
             <Card className="p-5 group hover:border-teal-500/50 dark:hover:border-teal-500/30 transition-all duration-500 hover:scale-[1.02]">
@@ -235,7 +251,22 @@ const DashboardPage: React.FC = () => {
               </div>
             )}
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart 
+                data={trendData || []} 
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                onClick={(data: any) => {
+                  if (data?.activePayload?.[0]?.payload) {
+                    const bucket = data.activePayload[0].payload;
+                    const params = new URLSearchParams();
+                    params.set('preset', 'custom');
+                    params.set('from', bucket.from);
+                    params.set('to', bucket.to);
+                    params.set('bucket', 'all');
+                    navigate(`/leads?${params.toString()}`);
+                    toast.success(`Drilling down into ${bucket.name}`);
+                  }
+                }}
+              >
                 <defs>
                   <linearGradient id="colorHot" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
@@ -297,8 +328,18 @@ const DashboardPage: React.FC = () => {
                   outerRadius={110}
                   paddingAngle={8}
                   dataKey="value"
-                  onClick={handleComingSoon}
                   stroke="none"
+                  onClick={(data: any) => {
+                    if (data?.name) {
+                      const params = new URLSearchParams();
+                      params.set('preset', preset);
+                      params.set('from', range.from);
+                      params.set('to', range.to);
+                      params.set('bucket', data.name);
+                      navigate(`/leads?${params.toString()}`);
+                      toast.success(`Filtering leads by ${data.name}`);
+                    }
+                  }}
                 >
                   {(stageDistro || []).map((entry: StagePoint, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} className="cursor-pointer outline-none" />
@@ -322,7 +363,15 @@ const DashboardPage: React.FC = () => {
             {(stageDistro || []).map((item: StagePoint) => (
               <div 
                 key={item.name} 
-                onClick={handleComingSoon}
+                onClick={() => {
+                  const params = new URLSearchParams();
+                  params.set('preset', preset);
+                  params.set('from', range.from);
+                  params.set('to', range.to);
+                  params.set('bucket', item.name);
+                  navigate(`/leads?${params.toString()}`);
+                  toast.success(`Filtering leads by ${item.name}`);
+                }}
                 className="flex items-center gap-3 p-3 rounded-2xl bg-zinc-50 dark:bg-white/5 border border-zinc-200/50 dark:border-white/10 cursor-pointer hover:scale-[1.05] transition-transform"
               >
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
@@ -355,6 +404,7 @@ const DashboardPage: React.FC = () => {
               <div 
                 key={i} 
                 onClick={handleComingSoon}
+                title={item.scoring?.reasons.join('\n')}
                 className="flex items-center justify-between p-4 rounded-[1.5rem] bg-zinc-50 dark:bg-white/5 border border-zinc-200/50 dark:border-white/5 hover:border-teal-500/30 transition-all cursor-pointer group"
               >
                 <div className="flex items-center gap-4">
@@ -362,12 +412,17 @@ const DashboardPage: React.FC = () => {
                     {item.name[0]}
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{item.name}</h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{item.name}</h4>
+                      <Badge variant="teal" size="xs" className="px-1 py-0 h-4 min-w-[24px] rounded-sm text-[8px] border-teal-500/10">
+                        {item.score}
+                      </Badge>
+                    </div>
                     <p className="text-[10px] font-semibold text-zinc-500">{item.phone}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <Badge variant={item.status === 'Hot' ? 'danger' : 'warning'} className="mb-1">
+                  <Badge variant={item.status === 'Hot' ? 'danger' : item.status === 'Warm' ? 'warning' : 'info'} className="mb-1">
                     {item.status}
                   </Badge>
                   <p className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">{item.time}</p>
@@ -387,7 +442,22 @@ const DashboardPage: React.FC = () => {
             <div className="flex items-center justify-between gap-2">
               {(funnelData || []).map((step: any, i: number) => (
                 <React.Fragment key={step.label}>
-                  <div className="flex-1 flex flex-col items-center gap-2 cursor-pointer group" onClick={handleComingSoon}>
+                  <div 
+                    className="flex-1 flex flex-col items-center gap-2 cursor-pointer group" 
+                    onClick={() => {
+                      const params = new URLSearchParams();
+                      params.set('preset', preset);
+                      params.set('from', range.from);
+                      params.set('to', range.to);
+                      if (step.label === 'Followup') params.set('status', 'FollowUpScheduled');
+                      else if (step.label === 'New') params.set('status', 'New');
+                      else if (step.label === 'Progress') params.set('status', 'InProgress');
+                      else if (step.label === 'Converted') params.set('status', 'Converted');
+                      
+                      navigate(`/leads?${params.toString()}`);
+                      toast.success(`Filtering leads by status: ${step.label}`);
+                    }}
+                  >
                     <div className={cn("w-full h-12 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-lg group-hover:scale-105 transition-transform", step.color)}>
                       {step.val}
                     </div>

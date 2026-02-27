@@ -5,6 +5,7 @@ import { AppShell } from '../layout/AppShell';
 // Pages
 import DashboardPage from '../pages/Dashboard/DashboardPage';
 import LeadsExplorerPage from '../pages/Leads/LeadsExplorerPage';
+import LeadDetailPage from '../pages/Leads/LeadDetailPage';
 import ConversationsPage from '../pages/Conversations/ConversationsPage';
 import LiveInboxPage from '../pages/LiveInbox/LiveInboxPage';
 import LeadInsightsPage from '../pages/LeadInsights/LeadInsightsPage';
@@ -18,6 +19,7 @@ export const AppRoutes: React.FC = () => {
       <Route element={<AppShell />}>
         <Route index element={<DashboardPage />} />
         <Route path="leads" element={<LeadsExplorerPage />} />
+        <Route path="leads/:id" element={<LeadDetailPage />} />
         <Route path="conversations" element={<ConversationsPage />} />
         <Route path="live-inbox" element={<LiveInboxPage />} />
         <Route path="lead-insights" element={<LeadInsightsPage />} />
