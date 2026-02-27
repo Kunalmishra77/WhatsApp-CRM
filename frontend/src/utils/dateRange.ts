@@ -10,23 +10,19 @@ import {
   endOfQuarter, 
   startOfYear, 
   endOfYear,
-  subDays,
-  subWeeks,
   subMonths,
-  subYears,
-  isValid,
+  subDays,
   parseISO
 } from 'date-fns';
-import { DatePreset, DateRange } from '../types/filters';
 
-export const getRangeFromPreset = (
-  preset: DatePreset, 
-  now: Date = new Date(), 
-  _timezone: string = 'Asia/Kolkata'
-): DateRange => {
-  // Simple implementation for now (standard JS Date)
-  // date-fns doesn't have native TZ support but we can work with standard dates for UTC-safe logic.
-  
+export type DatePreset = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'halfYearly' | 'yearly' | 'custom';
+
+export interface DateRange {
+  from: string; // ISO (YYYY-MM-DD)
+  to: string;   // ISO (YYYY-MM-DD)
+}
+
+export const getRangeFromPreset = (preset: DatePreset, now: Date = new Date()): DateRange => {
   let from: Date;
   let to: Date = endOfToday();
 
@@ -47,7 +43,6 @@ export const getRangeFromPreset = (
       to = endOfQuarter(now);
       break;
     case 'halfYearly':
-      // Roughly last 6 months
       from = subMonths(startOfMonth(now), 5);
       to = endOfMonth(now);
       break;
@@ -57,7 +52,7 @@ export const getRangeFromPreset = (
       break;
     case 'custom':
     default:
-      from = subWeeks(now, 1);
+      from = subDays(now, 7);
       to = now;
       break;
   }
@@ -68,9 +63,9 @@ export const getRangeFromPreset = (
   };
 };
 
-export const getLabel = (preset: DatePreset, range: DateRange): string => {
+export const getLabelForRange = (preset: DatePreset, range: DateRange): string => {
   if (preset === 'custom') {
-    return `${range.from} to ${range.to}`;
+    return `${range.from} – ${range.to}`;
   }
   
   const labels: Record<DatePreset, string> = {
@@ -80,12 +75,9 @@ export const getLabel = (preset: DatePreset, range: DateRange): string => {
     quarterly: 'This Quarter',
     halfYearly: 'Last 6 Months',
     yearly: 'This Year',
-    custom: 'Custom Range'
+    custom: 'Custom'
   };
   
-  return labels[preset];
-};
-
-export const isValidDateRange = (range: DateRange): boolean => {
-  return isValid(parseISO(range.from)) && isValid(parseISO(range.to));
+  const label = labels[preset];
+  return `${label} (${format(parseISO(range.from), 'dd MMM')} – ${format(parseISO(range.to), 'dd MMM')})`;
 };
