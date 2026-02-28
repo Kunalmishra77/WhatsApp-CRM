@@ -2,7 +2,8 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 
-import { DashboardRangeProvider } from '../state/dashboardRangeStore';
+import { RangeProvider } from '../state/globalRangeStore';
+import { ThemeProvider } from '../state/themeStore';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,10 +17,12 @@ const queryClient = new QueryClient({
 export const Providers: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <QueryClientProvider client={queryClient}>
-      <DashboardRangeProvider>
-        {children}
-        <Toaster position="top-right" richColors theme="system" />
-      </DashboardRangeProvider>
+      <ThemeProvider>
+        <RangeProvider>
+          {children}
+          <Toaster position="top-right" richColors theme="system" />
+        </RangeProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };

@@ -5,6 +5,7 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   variant?: 'glass' | 'panel' | 'raised';
   innerGlow?: boolean;
+  overflowHidden?: boolean;
 }
 
 export const Card: React.FC<CardProps> = ({ 
@@ -12,16 +13,18 @@ export const Card: React.FC<CardProps> = ({
   className, 
   variant = 'panel', 
   innerGlow = true,
+  overflowHidden = true,
   ...props 
 }) => {
   return (
     <div 
       className={cn(
-        "rounded-[1.5rem] border border-zinc-200/50 dark:border-white/5 overflow-hidden transition-all duration-300",
-        variant === 'glass' && "bg-white/40 dark:bg-black/40 backdrop-blur-xl",
-        variant === 'panel' && "bg-white/70 dark:bg-[#0f0f12]/70",
-        variant === 'raised' && "bg-white dark:bg-[#15151a] shadow-premium",
-        innerGlow && "shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]",
+        "rounded-3xl border border-black/5 dark:border-white/10 transition-all duration-300",
+        overflowHidden && "overflow-hidden",
+        variant === 'glass' && "bg-white/70 dark:bg-[#1c1c1e]/70 backdrop-blur-2xl shadow-sm",
+        variant === 'panel' && "bg-white dark:bg-[#1c1c1e] shadow-sm",
+        variant === 'raised' && "bg-white dark:bg-[#2c2c2e] shadow-premium",
+        innerGlow && "shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]",
         className
       )}
       {...props}

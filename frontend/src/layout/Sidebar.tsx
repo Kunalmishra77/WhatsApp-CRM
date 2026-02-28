@@ -16,7 +16,7 @@ import {
 import { cn } from '../lib/utils';
 import { Badge } from '../ui/Badge';
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { path: string; label: string; icon: any; badge?: string }[] = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/leads', label: 'Leads', icon: Users },
   { path: '/conversations', label: 'Conversations', icon: MessageSquare },
@@ -34,13 +34,13 @@ export const Sidebar: React.FC = () => {
   return (
     <aside 
       className={cn(
-        "h-screen flex flex-col transition-all duration-500 glass-morphism border-r border-zinc-200/50 dark:border-white/5 sticky top-0 z-[50]",
+        "h-screen flex flex-col transition-all duration-500 bg-white/80 dark:bg-black/80 backdrop-blur-3xl border-r border-black/5 dark:border-white/10 sticky top-0 z-[50]",
         collapsed ? "w-20" : "w-72"
       )}
     >
       {/* Logo */}
       <div className="p-8 flex items-center gap-4">
-        <div className="w-10 h-10 rounded-2xl bg-teal-500 flex items-center justify-center text-white shadow-[0_4px_12px_rgba(20,184,166,0.3)] shrink-0">
+        <div className="w-10 h-10 rounded-2xl bg-teal-500 flex items-center justify-center text-white shadow-lg shrink-0">
           <Zap size={22} fill="currentColor" strokeWidth={0} />
         </div>
         {!collapsed && (
@@ -51,7 +51,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto no-scrollbar py-4">
+      <nav className="flex-1 px-4 space-y-1.5 py-4">
         {NAV_ITEMS.map((item) => (
           <NavLink
             key={item.path}
@@ -59,8 +59,8 @@ export const Sidebar: React.FC = () => {
             className={({ isActive }) => cn(
               "flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group relative",
               isActive 
-                ? "bg-teal-500/10 dark:bg-teal-500/5 text-teal-600 dark:text-teal-400 border border-teal-500/20 dark:border-teal-500/10 shadow-sm" 
-                : "text-zinc-500 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-200"
+                ? "bg-black/5 dark:bg-white/10 text-teal-600 dark:text-teal-400 font-bold" 
+                : "text-zinc-500 hover:bg-black/5 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-zinc-200"
             )}
           >
             {({ isActive }) => (
@@ -70,12 +70,12 @@ export const Sidebar: React.FC = () => {
                   strokeWidth={isActive ? 2.5 : 2}
                   className={cn(
                     "shrink-0",
-                    isActive ? "text-teal-600 dark:text-teal-400 drop-shadow-[0_0_8px_rgba(20,184,166,0.4)]" : "text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-900 dark:group-hover:text-zinc-300 transition-colors"
+                    isActive ? "text-teal-600 dark:text-teal-400" : "text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-zinc-300 transition-colors"
                   )}
                 />
                 {!collapsed && (
                   <div className="flex-1 flex items-center justify-between">
-                    <span className="text-sm font-bold tracking-tight">{item.label}</span>
+                    <span className="text-sm tracking-tight">{item.label}</span>
                     {item.badge && (
                       <Badge variant="teal" size="xs" className="rounded-full px-1.5 py-0 min-w-[18px] h-[18px]">
                         {item.badge}
@@ -93,7 +93,7 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* Collapse Toggle */}
-      <div className="p-4 border-t border-zinc-200/50 dark:border-white/5">
+      <div className="p-4 border-t border-black/5 dark:border-white/5">
         <button 
           onClick={() => setCollapsed(!collapsed)}
           className="w-full flex items-center justify-center p-3 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-500"

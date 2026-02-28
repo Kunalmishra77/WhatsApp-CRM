@@ -13,7 +13,7 @@ import TasksFollowupsPage from '../pages/Tasks/TasksFollowupsPage';
 import ReportsPage from '../pages/Reports/ReportsPage';
 import ExportsPage from '../pages/Exports/ExportsPage';
 import SettingsPage from '../pages/Settings/SettingsPage';
-import Placeholder from '../pages/Placeholder';
+import NotFoundPage from '../pages/NotFoundPage';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -27,7 +27,6 @@ export const AppRoutes: React.FC = () => {
         
         {/* Conversations */}
         <Route path="conversations" element={<ConversationsPage />} />
-        <Route path="conversations/:id" element={<Placeholder name="Conversation Detail" />} />
         
         {/* Workflow */}
         <Route path="live-inbox" element={<LiveInboxPage />} />
@@ -40,7 +39,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="settings" element={<SettingsPage />} />
         
         {/* Fallback */}
-        <Route path="*" element={<Placeholder name="404 Not Found" subtitle="The requested intelligence path does not exist." />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );

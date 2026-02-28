@@ -9,30 +9,39 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   className?: string;
+  overflowHidden?: boolean;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className }) => {
+export const Modal: React.FC<ModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  title, 
+  children, 
+  className,
+  overflowHidden = true 
+}) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/80 backdrop-blur-md"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className={cn(
-              "relative w-full max-w-md glass-morphism rounded-[2.5rem] shadow-2xl p-8 border border-white/10 overflow-hidden",
+              "relative w-full max-w-md glass-morphism rounded-[2.5rem] shadow-2xl p-8 border border-zinc-200/50 dark:border-white/10 flex flex-col max-h-[90vh]",
+              overflowHidden && "overflow-hidden",
               className
             )}
           >
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 shrink-0">
               <h3 className="text-xl font-black tracking-tighter uppercase italic text-zinc-900 dark:text-zinc-100">{title}</h3>
               <button 
                 onClick={onClose}
@@ -41,7 +50,9 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
                 <X size={20} />
               </button>
             </div>
-            {children}
+            <div className="flex-1 overflow-y-auto no-scrollbar pr-1">
+              {children}
+            </div>
           </motion.div>
         </div>
       )}

@@ -17,18 +17,18 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
   ...props 
 }, ref) => {
   const variants = {
-    primary: "bg-teal-600 dark:bg-teal-500 text-white hover:bg-teal-700 dark:hover:bg-teal-600 shadow-[0_4px_12px_rgba(20,184,166,0.3)]",
-    secondary: "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700",
-    ghost: "bg-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-    outline: "bg-transparent border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900",
-    danger: "bg-red-500 text-white hover:bg-red-600 shadow-[0_4px_12px_rgba(239,68,68,0.2)]",
+    primary: "bg-teal-600 dark:bg-teal-500 text-white hover:bg-teal-700 dark:hover:bg-teal-600 shadow-sm",
+    secondary: "bg-[#e5e5ea] dark:bg-[#2c2c2e] text-[#1c1c1e] dark:text-white hover:bg-[#d1d1d6] dark:hover:bg-[#3a3a3c]",
+    ghost: "bg-transparent text-[#1c1c1e] dark:text-[#8e8e93] hover:bg-[#e5e5ea]/50 dark:hover:bg-[#2c2c2e]",
+    outline: "bg-transparent border border-[#c7c7cc] dark:border-[#38383a] text-[#1c1c1e] dark:text-[#e5e5ea] hover:bg-[#f2f2f7] dark:hover:bg-[#1c1c1e]",
+    danger: "bg-[#ff3b30] text-white hover:bg-[#d70015] shadow-sm",
   };
 
   const sizes = {
-    sm: "px-3 py-1.5 text-xs font-bold",
-    md: "px-5 py-2.5 text-sm font-bold",
-    lg: "px-8 py-3.5 text-base font-bold",
-    icon: "p-2.5 aspect-square flex items-center justify-center",
+    sm: "h-9 px-4 text-xs font-semibold",
+    md: "h-11 px-6 text-sm font-semibold",
+    lg: "h-14 px-8 text-base font-semibold",
+    icon: "h-10 w-10 flex items-center justify-center",
   };
 
   return (
@@ -36,7 +36,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
       ref={ref}
       disabled={loading || props.disabled}
       className={cn(
-        "rounded-xl transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none cursor-pointer tracking-tight",
+        "rounded-xl transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none cursor-pointer tracking-tight",
         variants[variant],
         sizes[size],
         className
