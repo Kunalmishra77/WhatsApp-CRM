@@ -252,7 +252,7 @@ const DashboardPage: React.FC = () => {
               <div className="flex-1 w-full relative min-h-[300px] overflow-hidden">
                 {isMounted && stageDistro && stageDistro.length > 0 ? (
                   <div className="absolute inset-0 w-full h-full">
-                    <ResponsiveContainer width="99%" height="100%" debounce={1}>
+                    <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                       <PieChart>
                         <Pie 
                           data={stageDistro} 
@@ -322,7 +322,7 @@ const DashboardPage: React.FC = () => {
                   <div className="flex-1 w-full relative min-h-[180px]">
                     {isMounted && trendData && trendData.length > 0 ? (
                       <div className="absolute inset-0 w-full h-full">
-                        <ResponsiveContainer width="99%" height="100%" debounce={1}>
+                        <ResponsiveContainer width="100%" height="100%" minHeight={180}>
                           <BarChart 
                             data={trendData} 
                             margin={{ top: 0, right: 0, left: -25, bottom: 0 }}
@@ -375,7 +375,7 @@ const DashboardPage: React.FC = () => {
                   <div className="flex-1 w-full relative min-h-[180px]">
                     {isMounted && waTrend && waTrend.length > 0 ? (
                       <div className="absolute inset-0 w-full h-full">
-                        <ResponsiveContainer width="99%" height="100%" debounce={1}>
+                        <ResponsiveContainer width="100%" height="100%" minHeight={180}>
                           <AreaChart 
                             data={waTrend} 
                             margin={{ top: 0, right: 0, left: -25, bottom: 0 }}

@@ -317,7 +317,7 @@ const LeadsExplorerPage: React.FC = () => {
                     <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
                   </div>
                 )}
-                <ResponsiveContainer width="100%" height={350}>
+                <ResponsiveContainer width="100%" height={350} minHeight={350}>
                   <BarChart data={trendData || []}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(120,120,120,0.05)" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: '900', fill: '#71717a' }} />
@@ -341,7 +341,7 @@ const LeadsExplorerPage: React.FC = () => {
               <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-8">Distribution of filtered leads.</p>
               <div className="flex-1 flex flex-col items-center justify-center relative">
                 {stageLoading && <Loader2 className="absolute w-8 h-8 text-teal-500 animate-spin" />}
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={250} minHeight={250}>
                   <PieChart>
                     <Pie
                       data={stageDistro || []}

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { conversationService, leadService, dashboardService, taskService, noteService, tagService } from './services.js';
+import { conversationService, leadService, dashboardService, taskService, noteService, tagService, proxyService } from './services.js';
 const router = Router();
 // ... existing routes ...
 // Tasks
@@ -160,6 +160,165 @@ router.get('/leads', async (req, res) => {
     }
     catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+// ============================================================
+// PROXY ROUTES — Serve as CORS-safe bridge between frontend
+// and Supabase. Frontend calls /api/proxy/* instead of hitting
+// Supabase REST directly from the browser.
+// ============================================================
+// ── Lead Insights ───────────────────────────────────────────
+router.get('/proxy/insights', async (req, res) => {
+    try {
+        const data = await proxyService.getInsights(req.query);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+router.get('/proxy/insights/by-phone/:phone', async (req, res) => {
+    try {
+        const data = await proxyService.getInsightByPhone(req.params.phone);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+router.get('/proxy/insights/by-ids', async (req, res) => {
+    try {
+        const ids = req.query.ids ? String(req.query.ids).split(',').map(Number) : [];
+        const data = await proxyService.getInsightsByIds(ids);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+// ── CRM Lead State ──────────────────────────────────────────
+router.get('/proxy/states', async (req, res) => {
+    try {
+        const ids = req.query.ids ? String(req.query.ids).split(',').map(Number) : undefined;
+        const data = await proxyService.getStates(ids);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+router.post('/proxy/states/upsert', async (req, res) => {
+    try {
+        const data = await proxyService.upsertState(req.body);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+router.patch('/proxy/states/by-phone/:phone', async (req, res) => {
+    try {
+        const data = await proxyService.updateStateByPhone(req.params.phone, req.body);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+router.post('/proxy/states/insert', async (req, res) => {
+    try {
+        const data = await proxyService.insertState(req.body);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+// ── WhatsApp Conversations ──────────────────────────────────
+router.get('/proxy/conversations/range', async (req, res) => {
+    try {
+        const data = await proxyService.getConversationsRange(req.query);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+router.get('/proxy/conversations/session/:sessionId', async (req, res) => {
+    try {
+        const data = await proxyService.getConversationBySessionId(req.params.sessionId);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+// ── Lead Tasks ──────────────────────────────────────────────
+router.get('/proxy/tasks', async (req, res) => {
+    try {
+        const data = await proxyService.getTasks();
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+router.post('/proxy/tasks', async (req, res) => {
+    try {
+        const data = await proxyService.createTask(req.body);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+router.patch('/proxy/tasks/:id', async (req, res) => {
+    try {
+        const data = await proxyService.updateTask(req.params.id, req.body);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+// ── Lead Comments ───────────────────────────────────────────
+router.post('/proxy/comments', async (req, res) => {
+    try {
+        const data = await proxyService.insertComment(req.body);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+router.get('/proxy/comments', async (req, res) => {
+    try {
+        const data = await proxyService.getComments(req.query);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+// ── Optional Tables (safe upsert, won't fail on missing table)
+router.post('/proxy/optional/:table', async (req, res) => {
+    try {
+        const data = await proxyService.insertOptional(req.params.table, req.body);
+        res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+// ── Table / Column Existence Check ─────────────────────────
+router.get('/proxy/check-table', async (req, res) => {
+    try {
+        const { table, columns } = req.query;
+        const exists = await proxyService.checkTable(table, columns);
+        res.json({ exists });
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 export default router;

@@ -3,54 +3,32 @@ import { useDiagnosticsStore } from '../state/diagnosticsStore';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:3010/api';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  setTimeout(() => {
-    useDiagnosticsStore.getState().addError({
-      type: 'env',
-      message: 'Supabase credentials missing',
-      hint: 'Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY',
-      recommendedFix: 'Check your frontend/.env file and ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set correctly.'
-    });
-  }, 1000);
-}
+// The supabase client is kept so that any lingering import won't break at compile time,
+// but api.ts no longer uses this client — all queries go through the backend proxy.
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder'
+);
 
-export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'placeholder');
-
-// Startup Health Check
+// ── Startup Health Check (via backend — no direct Supabase REST call from browser) ──
 export const checkSupabaseHealth = async () => {
   try {
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw sessionError;
-
-    const { error: dbError } = await supabase.from('whatsapp_conversations').select('id').limit(1);
-    if (dbError) throw dbError;
-    
-    // Status is good. No need to show error.
+    const res = await fetch(`${API_BASE}/health`);
+    if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error || 'Backend health check failed');
+    // All good — backend is connected to Supabase
   } catch (error: any) {
-    let type: 'db' | 'auth' | 'network' = 'db';
-    let hint = error.message;
-    let recommendedFix = 'Check your Supabase project status.';
-
-    if (error.message?.includes('fetch failed') || error.message?.includes('Failed to fetch')) {
-       type = 'network';
-       hint = 'Network connection failed. Supabase might be paused or unreachable.';
-       recommendedFix = 'Go to Supabase Dashboard and check if the project is "Paused". If so, click Restore. Also check your internet connection.';
-    } else if (error.status === 401 || error.status === 403) {
-       type = 'auth';
-       hint = 'Authentication or RLS error. Invalid ANON key or RLS is blocking access.';
-       recommendedFix = 'Verify VITE_SUPABASE_ANON_KEY. Ensure RLS policies allow access to whatsapp_conversations.';
-    }
-
     useDiagnosticsStore.getState().addError({
-      type,
-      status: error.status,
-      message: 'Supabase Health Check Failed ❌',
-      hint,
-      recommendedFix,
+      type: 'network',
+      message: 'Backend Health Check Failed ❌',
+      hint: error.message,
+      recommendedFix: 'Make sure the backend server is running at http://localhost:3010 (npm run dev in the backend folder).'
     });
   }
 };
 
-// Run health check on load
-setTimeout(checkSupabaseHealth, 1000);
+// Run health check 1.5 s after page load
+setTimeout(checkSupabaseHealth, 1500);

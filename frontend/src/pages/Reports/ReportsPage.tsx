@@ -119,7 +119,7 @@ const ReportsPage: React.FC = () => {
               <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /></div>
             ) : (
               <div className="absolute inset-0">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                   <PieChart>
                     <Pie
                       data={data?.conversionRatio || []}
@@ -159,7 +159,7 @@ const ReportsPage: React.FC = () => {
               <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /></div>
             ) : (
               <div className="absolute inset-0">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                   <BarChart data={data?.sentimentSplit || []} layout="vertical" margin={{ left: 20, right: 40, top: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.03)" />
                     <XAxis type="number" hide />
@@ -195,7 +195,7 @@ const ReportsPage: React.FC = () => {
             <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /></div>
           ) : (
             <div className="absolute inset-0">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                 <AreaChart data={data?.performanceTrend || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorSignals" x1="0" y1="0" x2="0" y2="1">
