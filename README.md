@@ -5,10 +5,10 @@
 > it, host it.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-violet.svg)](./LICENSE)
-[![CI](https://github.com/ArnasDon/wacrm/actions/workflows/ci.yml/badge.svg)](https://github.com/ArnasDon/wacrm/actions/workflows/ci.yml)
+[![CI](https://github.com/Kunalmishra77/WhatsApp-CRM/actions/workflows/ci.yml/badge.svg)](https://github.com/Kunalmishra77/WhatsApp-CRM/actions/workflows/ci.yml)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)](https://nextjs.org)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Auth-3ecf8e?logo=supabase)](https://supabase.com)
-[![Stars](https://img.shields.io/github/stars/ArnasDon/wacrm?style=social)](https://github.com/ArnasDon/wacrm/stargazers)
+[![Stars](https://img.shields.io/github/stars/Kunalmishra77/WhatsApp-CRM?style=social)](https://github.com/Kunalmishra77/WhatsApp-CRM/stargazers)
 
 The marketing site and self-host docs live in a separate repo:
 [ArnasDon/wacrm-site](https://github.com/ArnasDon/wacrm-site)
@@ -53,9 +53,9 @@ in an afternoon and make yours.
 ## Quick start
 
 ```bash
-# Fork on GitHub first: https://github.com/ArnasDon/wacrm → Fork
-git clone https://github.com/<your-username>/wacrm.git
-cd wacrm
+# Clone the repository
+git clone https://github.com/Kunalmishra77/WhatsApp-CRM.git
+cd WhatsApp-CRM
 npm install
 cp .env.local.example .env.local   # fill in Supabase + Meta creds
 npm run dev
