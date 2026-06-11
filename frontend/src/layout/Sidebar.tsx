@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  MessageSquare, 
-  Inbox, 
-  BarChart3, 
-  Download, 
+import {
+  LayoutDashboard,
+  Users,
+  MessageSquare,
+  Inbox,
+  BarChart3,
+  Download,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -39,14 +39,17 @@ export const Sidebar: React.FC = () => {
       )}
     >
       {/* Logo */}
-      <div className="p-8 flex items-center gap-4">
-        <div className="w-10 h-10 rounded-2xl bg-teal-500 flex items-center justify-center text-white shadow-lg shrink-0">
-          <Zap size={22} fill="currentColor" strokeWidth={0} />
-        </div>
-        {!collapsed && (
-          <h1 className="text-xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 uppercase italic">
-            India<span className="font-light text-zinc-500 text-sm">Grain</span>
-          </h1>
+      <div className="px-6 py-5 flex items-center">
+        {collapsed ? (
+          <div className="w-10 h-10 rounded-2xl bg-orange-500 flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
+            U
+          </div>
+        ) : (
+          <img
+            src="https://umang2-0.vercel.app/Umang-logo.webp"
+            alt="Umang Superspeciality Hospital"
+            className="h-10 w-auto object-contain"
+          />
         )}
       </div>
 

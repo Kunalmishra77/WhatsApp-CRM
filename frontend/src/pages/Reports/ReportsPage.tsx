@@ -92,10 +92,12 @@ const ReportsPage: React.FC = () => {
               <>
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-tight">{m.label}</span>
-                  <div className={cn("flex items-center text-[9px] font-bold", m.isUp ? "text-green-500" : "text-red-500")}>
-                    {m.isUp ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                    {m.delta}
-                  </div>
+                  {m.delta && m.delta !== '-' && (
+                    <div className={cn("flex items-center text-[9px] font-bold", m.isUp ? "text-green-500" : "text-red-500")}>
+                      {m.isUp ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                      {m.delta}
+                    </div>
+                  )}
                 </div>
                 <h4 className="text-3xl font-bold text-zinc-900 dark:text-white tabular-nums tracking-tight">{m.value}</h4>
               </>

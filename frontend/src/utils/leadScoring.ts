@@ -35,43 +35,38 @@ export const computeLeadScore = (lead: any): ScoringResult => {
 
   // 2. Intent keywords in concern/summary
   const text = `${lead.concern || ''} ${lead['Conversation Summary'] || ''}`.toLowerCase();
-  if (/price|quote|cost|rate/i.test(text)) {
+  if (/price|cost|fee|charges|rate|insurance|cghs/i.test(text)) {
     score += 15;
-    reasons.push('Intent: Pricing/Quote inquiry (+15)');
+    reasons.push('Intent: Pricing/Insurance inquiry (+15)');
   }
-  if (/capacity|tph|ton|output/i.test(text)) {
-    score += 12;
-    reasons.push('Intent: Capacity/TPH details (+12)');
-  }
-  if (/delivery|dispatch|ship|transport/i.test(text)) {
-    score += 10;
-    reasons.push('Intent: Delivery/Logistics (+10)');
-  }
-  if (/urgent|asap|immediately|quick/i.test(text)) {
-    score += 12;
-    reasons.push('Intent: High Urgency (+12)');
-  }
-
-  // 3. Completeness (Inferred from text for now as fields aren't explicit)
-  // Logic: +8 if state present, +8 if district present, +18 if capacity_tph present
-  // For the sake of v1, we check if these entities are mentioned in the summary or concern
-  const hasState = /state|location|in\s+[A-Z][a-z]+/i.test(text); // Very basic check
-  const hasCapacity = /\d+\s*tph|capacity/i.test(text);
-
-  if (hasState) {
-    score += 8;
-    reasons.push('Data: Location identified (+8)');
-  } else {
-    score -= 8;
-    reasons.push('Missing: State/Location (-8)');
-  }
-
-  if (hasCapacity) {
+  if (/appointment|book|opd|consultation|visit|schedule/i.test(text)) {
     score += 18;
-    reasons.push('Data: Capacity requirement clear (+18)');
+    reasons.push('Intent: Appointment request (+18)');
+  }
+  if (/surgery|operation|procedure|angioplasty|transplant|treatment/i.test(text)) {
+    score += 12;
+    reasons.push('Intent: Procedure inquiry (+12)');
+  }
+  if (/urgent|emergency|immediate|severe|critical|pain|attack/i.test(text)) {
+    score += 12;
+    reasons.push('Intent: Emergency/Urgency (+12)');
+  }
+
+  // 3. Specialist/department identified
+  const hasSpecialist = /cardiol|orthoped|neurol|gynaecol|pediatr|urolog|gastro|pulmon|oncol|dermatol/i.test(text);
+  const hasMedicalConcern = /stone|cancer|diabetes|sugar|blood pressure|heart|spine|joint|kidney|liver|lung|tumor/i.test(text);
+
+  if (hasSpecialist) {
+    score += 8;
+    reasons.push('Data: Specialist identified (+8)');
   } else {
-    score -= 15;
-    reasons.push('Missing: Capacity requirement (-15)');
+    score -= 5;
+    reasons.push('Missing: Specialist not identified (-5)');
+  }
+
+  if (hasMedicalConcern) {
+    score += 10;
+    reasons.push('Data: Medical concern clear (+10)');
   }
 
   // 4. Sentiment

@@ -7,9 +7,7 @@ import {
   IceCream, 
   CheckCircle2, 
   XCircle, 
-  TrendingUp, 
-  ArrowUpRight, 
-  ArrowDownRight,
+  TrendingUp,
   Filter,
   Plus,
   Loader2,
@@ -53,9 +51,9 @@ const DashboardPage: React.FC = () => {
   const [isMounted, setIsMounted] = React.useState(false);
 
   // --- Local Range States ---
-  const [stagePreset, setStagePreset] = React.useState<DatePreset>('monthly');
-  const [leadsPreset, setLeadsPreset] = React.useState<DatePreset>('weekly');
-  const [waPreset, setWaPreset] = React.useState<DatePreset>('daily');
+  const [stagePreset, setStagePreset] = React.useState<DatePreset>('yearly');
+  const [leadsPreset, setLeadsPreset] = React.useState<DatePreset>('yearly');
+  const [waPreset, setWaPreset] = React.useState<DatePreset>('yearly');
 
   const stageRange = React.useMemo(() => getRangeFromPreset(stagePreset), [stagePreset]);
   const leadsRange = React.useMemo(() => getRangeFromPreset(leadsPreset), [leadsPreset]);
@@ -128,14 +126,14 @@ const DashboardPage: React.FC = () => {
   };
 
   const kpiCards = [
-    { title: 'Total Leads', value: kpis?.totalLeads ?? '0', change: '+12.5%', isUp: true, icon: Users, color: 'teal', bucket: 'all' },
-    { title: 'Hot Leads', value: kpis?.hotLeads ?? '0', change: '+8.2%', isUp: true, icon: Flame, color: 'danger', bucket: 'Hot' },
-    { title: 'Warm Leads', value: kpis?.warmLeads ?? '0', change: '-2.4%', isUp: false, icon: Zap, color: 'warning', bucket: 'Warm' },
-    { title: 'Cold Leads', value: kpis?.coldLeads ?? '0', change: '+1.5%', isUp: true, icon: IceCream, color: 'info', bucket: 'Cold' },
-    { title: 'Converted', value: kpis?.converted ?? '0', change: '+18.3%', isUp: true, icon: CheckCircle2, color: 'success', bucket: 'Converted' },
-    { title: 'Lost Leads', value: kpis?.unconverted ?? '0', change: '+2.1%', isUp: false, icon: XCircle, color: 'danger', bucket: 'Unconverted' },
-    { title: 'Pending Decisions', value: kpis?.pendingDecisions ?? '0', change: '+4.1%', isUp: true, icon: Clock, color: 'zinc', bucket: 'Pending' },
-    { title: 'Avg Score', value: kpis?.avgScore ?? '0', change: '+5.2%', isUp: true, icon: TrendingUp, color: 'teal', bucket: undefined },
+    { title: 'Total Leads', value: kpis?.totalLeads ?? '0', icon: Users, color: 'teal', bucket: 'all' },
+    { title: 'Hot Leads', value: kpis?.hotLeads ?? '0', icon: Flame, color: 'danger', bucket: 'Hot' },
+    { title: 'Warm Leads', value: kpis?.warmLeads ?? '0', icon: Zap, color: 'warning', bucket: 'Warm' },
+    { title: 'Cold Leads', value: kpis?.coldLeads ?? '0', icon: IceCream, color: 'info', bucket: 'Cold' },
+    { title: 'Converted', value: kpis?.converted ?? '0', icon: CheckCircle2, color: 'success', bucket: 'Converted' },
+    { title: 'Lost Leads', value: kpis?.unconverted ?? '0', icon: XCircle, color: 'danger', bucket: 'Unconverted' },
+    { title: 'Pending', value: kpis?.pendingDecisions ?? '0', icon: Clock, color: 'zinc', bucket: 'Pending' },
+    { title: 'Avg Score', value: kpis?.avgScore ?? '0', icon: TrendingUp, color: 'teal', bucket: undefined },
   ];
 
   // Helper for the Local Range UI component
@@ -194,13 +192,6 @@ const DashboardPage: React.FC = () => {
                   "bg-gray-500/10 text-gray-500"
                 )}>
                   <kpi.icon size={16} strokeWidth={2.5} />
-                </div>
-                <div className={cn(
-                  "text-[10px] font-bold flex items-center",
-                  kpi.isUp ? "text-green-500" : "text-red-500"
-                )}>
-                  {kpi.isUp ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                  {kpi.change}
                 </div>
               </div>
               <h3 className="text-[10px] font-semibold text-zinc-500 uppercase tracking-tight mb-1">{kpi.title}</h3>
@@ -488,17 +479,30 @@ const DashboardPage: React.FC = () => {
            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white px-2 tracking-tight">Agent Performance</h3>
            <Card className="p-8 flex-1 bg-white dark:bg-[#1c1c1e] border-black/5 dark:border-white/10 shadow-sm">
               <div className="space-y-8">
-                {(agentPerformance || []).map((agent: any) => (
-                  <div key={agent.name} className="space-y-3">
-                    <div className="flex justify-between items-end px-1">
-                      <span className="text-[15px] font-semibold text-zinc-900 dark:text-white">{agent.name}</span>
-                      <span className="text-[12px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-lg">{agent.conv} Conv</span>
-                    </div>
-                    <div className="h-[6px] w-full bg-[#f5f5f7] dark:bg-white/5 rounded-full overflow-hidden">
-                      <motion.div initial={{ width: 0 }} animate={{ width: agent.conv }} className={cn("h-full rounded-full", agent.color === 'bg-teal-500' ? "bg-blue-500" : "bg-green-500")} />
-                    </div>
+                {agentPerformance === undefined ? (
+                  <div className="space-y-8">
+                    {[1, 2, 3].map((n) => (
+                      <div key={n} className="space-y-3">
+                        <div className="h-4 w-2/3 bg-zinc-100 dark:bg-white/5 rounded animate-pulse" />
+                        <div className="h-[6px] w-full bg-zinc-100 dark:bg-white/5 rounded-full animate-pulse" />
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : agentPerformance.length === 0 ? (
+                  <p className="text-[11px] font-bold text-zinc-400 text-center py-8">No agents assigned yet</p>
+                ) : (
+                  agentPerformance.map((agent: any) => (
+                    <div key={agent.name} className="space-y-3">
+                      <div className="flex justify-between items-end px-1">
+                        <span className="text-[15px] font-semibold text-zinc-900 dark:text-white">{agent.name}</span>
+                        <span className="text-[12px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-lg">{agent.conv} Conv</span>
+                      </div>
+                      <div className="h-[6px] w-full bg-[#f5f5f7] dark:bg-white/5 rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: agent.conv }} className={cn("h-full rounded-full", agent.color === 'bg-teal-500' ? "bg-blue-500" : "bg-green-500")} />
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
            </Card>
         </div>

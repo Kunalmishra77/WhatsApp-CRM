@@ -8,7 +8,7 @@ export const Footer: React.FC = () => {
         <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-800" />
         <span className="text-[10px] font-bold">Intelligence Ops Platform</span>
       </div>
-      <div className="text-[10px] font-bold tracking-tight uppercase italic opacity-30 group-hover:opacity-100 transition-opacity">v2.4.8-india-grain</div>
+      <div className="text-[10px] font-bold tracking-tight uppercase italic opacity-30 group-hover:opacity-100 transition-opacity">v2.4.8-umang-hospital</div>
     </footer>
   );
 };

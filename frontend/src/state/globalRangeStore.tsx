@@ -12,7 +12,7 @@ interface RangeContextType {
 
 const RangeContext = createContext<RangeContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'crm_global_range_v2';
+const STORAGE_KEY = 'crm_global_range_v3';
 
 export const RangeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<{ preset: DatePreset; from: string; to: string }>(() => {
@@ -20,7 +20,6 @@ export const RangeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Validate if it's a valid preset or custom with dates
         if (parsed.preset && parsed.from && parsed.to) {
           return parsed;
         }
@@ -28,10 +27,10 @@ export const RangeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         console.error("Failed to parse range from storage", e);
       }
     }
-    
-    // Default: Weekly
-    const range = getRangeFromPreset('weekly');
-    return { preset: 'weekly', ...range };
+
+    // Default: Yearly — covers all data in the current year
+    const range = getRangeFromPreset('yearly');
+    return { preset: 'yearly', ...range };
   });
 
   const setPreset = useCallback((preset: DatePreset) => {

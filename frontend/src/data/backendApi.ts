@@ -53,3 +53,13 @@ export const bPatch = async (path: string, body?: any) => {
     });
     return handleResponse(res);
 };
+
+/** DELETE request with a JSON body */
+export const bDelete = async (path: string, body?: any) => {
+    const res = await fetch(buildUrl(path), {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    return handleResponse(res);
+};

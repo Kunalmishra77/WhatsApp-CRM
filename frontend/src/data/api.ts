@@ -572,22 +572,14 @@ export const dataApi = {
       const hasAgentSupport = await checkTableSupport('crm_lead_state', 'owner_user_id, status_enum');
 
       if (!hasAgentSupport) {
-        return [
-          { name: 'Rahul S.', leads: 142, conv: '12%', color: 'bg-teal-500' },
-          { name: 'Sanya M.', leads: 128, conv: '15%', color: 'bg-green-500' },
-          { name: 'Arjun K.', leads: 95, conv: '8%', color: 'bg-blue-500' },
-        ];
+        return [];
       }
 
       const states: any[] = await bGet('/proxy/states').catch(() => []);
       const withOwner = (states || []).filter((s: any) => s.owner_user_id);
 
       if (withOwner.length === 0) {
-        return [
-          { name: 'Rahul S.', leads: 142, conv: '12%', color: 'bg-teal-500' },
-          { name: 'Sanya M.', leads: 128, conv: '15%', color: 'bg-green-500' },
-          { name: 'Arjun K.', leads: 95, conv: '8%', color: 'bg-blue-500' },
-        ];
+        return [];
       }
 
       const agentMap = new Map<string, { leads: number; converted: number }>();
@@ -609,11 +601,7 @@ export const dataApi = {
         .sort((a, b) => b.leads - a.leads);
     } catch (e) {
       console.error('Agent performance fetch error:', e);
-      return [
-        { name: 'Rahul S.', leads: 142, conv: '12%', color: 'bg-teal-500' },
-        { name: 'Sanya M.', leads: 128, conv: '15%', color: 'bg-green-500' },
-        { name: 'Arjun K.', leads: 95, conv: '8%', color: 'bg-blue-500' },
-      ];
+      return [];
     }
   },
 
@@ -854,7 +842,8 @@ export const dataApi = {
     try {
       const [insightsRaw, statesRaw] = await Promise.all([
         bGet('/proxy/insights', { from: range.from, to: range.to }),
-        bGet('/proxy/states')
+        bGet('/proxy/states'),
+        bGet('/proxy/conversations/range', { from: range.from, to: range.to })
       ]);
 
       const rawInsights = ((insightsRaw as any[]) || []).map((i: any) => ({ ...i, scoring: computeLeadScore(i) }));
@@ -878,11 +867,13 @@ export const dataApi = {
         { name: 'Negative', value: rawInsights.filter((i: any) => i.sentiment?.toLowerCase().includes('neg')).length, color: '#f43f5e' }
       ];
 
+      const posSentiment = rawInsights.filter((i: any) => i.sentiment?.toLowerCase().includes('pos')).length;
+      const daysInRange = Math.max(1, Math.ceil((new Date(range.to).getTime() - new Date(range.from).getTime()) / (1000 * 60 * 60 * 24)));
       const engagementMetrics = [
-        { label: 'Total Messages', value: '4.2k', delta: '+12%', isUp: true },
-        { label: 'Avg Resp Time', value: '14m', delta: '-2m', isUp: true },
-        { label: 'Agent Handover', value: '84%', delta: '+5%', isUp: true },
-        { label: 'Lead Velocity', value: '2.4/day', delta: '+0.2', isUp: true },
+        { label: 'Total Leads', value: String(total), delta: '-', isUp: true },
+        { label: 'Conversion Rate', value: total > 0 ? `${Math.round((converted / total) * 100)}%` : '0%', delta: '-', isUp: true },
+        { label: 'Positive Sentiment', value: total > 0 ? `${Math.round((posSentiment / total) * 100)}%` : '0%', delta: '-', isUp: true },
+        { label: 'Lead Velocity', value: `${(total / daysInRange).toFixed(1)}/day`, delta: '-', isUp: true },
       ];
 
       const startDate = startOfDay(parseISO(range.from));

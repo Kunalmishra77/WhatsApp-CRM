@@ -17,14 +17,15 @@ export const Card: React.FC<CardProps> = ({
   ...props 
 }) => {
   return (
-    <div 
+    <div
       className={cn(
-        "rounded-3xl border border-black/5 dark:border-white/10 transition-all duration-300",
+        "rounded-2xl border transition-all duration-200",
+        "border-black/[0.06] dark:border-white/[0.08]",
         overflowHidden && "overflow-hidden",
-        variant === 'glass' && "bg-white/70 dark:bg-[#1c1c1e]/70 backdrop-blur-2xl shadow-sm",
-        variant === 'panel' && "bg-white dark:bg-[#1c1c1e] shadow-sm",
-        variant === 'raised' && "bg-white dark:bg-[#2c2c2e] shadow-premium",
-        innerGlow && "shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]",
+        variant === 'glass' && "bg-white/75 dark:bg-[#1c1c1e]/75 backdrop-blur-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)]",
+        variant === 'panel' && "bg-white dark:bg-[#1c1c1e] shadow-[0_1px_4px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.04)]",
+        variant === 'raised' && "bg-white dark:bg-[#2c2c2e] shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_4px_rgba(0,0,0,0.06)]",
+        innerGlow && "shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_4px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_1px_4px_rgba(0,0,0,0.3),0_4px_16px_rgba(0,0,0,0.2)]",
         className
       )}
       {...props}

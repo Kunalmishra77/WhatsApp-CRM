@@ -22,10 +22,10 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   return (
     <Card overflowHidden={overflowHidden} className={cn("p-8", className)}>
       {(title || subtitle || headerActions) && (
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6 pb-5 border-b border-zinc-100 dark:border-white/[0.06]">
           <div>
             {title && (
-              <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
                 {title}
               </h3>
             )}

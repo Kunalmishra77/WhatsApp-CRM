@@ -5,6 +5,7 @@ import { Settings, Save, Moon, Sun, Bell, Database, Shield, Zap, Globe, User } f
 import { Button } from '../../ui/Button';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
+import { bGet } from '../../data/backendApi';
 
 import { useTheme } from '../../state/themeStore';
 
@@ -12,6 +13,23 @@ const SettingsPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const [autoInsights, setAutoInsights] = useState(true);
   const [notifications, setBell] = useState(true);
+  const [testingConnection, setTestingConnection] = useState(false);
+
+  const handleTestConnection = async () => {
+    setTestingConnection(true);
+    try {
+      const result = await bGet('/health');
+      if (result?.ok) {
+        toast.success('Database connected — Supabase is healthy.');
+      } else {
+        toast.error('Database check failed — connection may be degraded.');
+      }
+    } catch {
+      toast.error('Cannot reach backend — is the server running on port 3010?');
+    } finally {
+      setTestingConnection(false);
+    }
+  };
 
   const handleSaveSettings = () => {
     toast.success("Intelligence parameters updated successfully.");
@@ -115,10 +133,12 @@ const SettingsPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tight">Supabase Core</p>
-                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">Connection: Optimal</p>
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">Database Connection</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="w-full text-[9px] h-9 border-zinc-200 dark:border-white/10" onClick={() => toast.success("Database handshake verified.")}>Test Connection</Button>
+              <Button variant="outline" size="sm" className="w-full text-[9px] h-9 border-zinc-200 dark:border-white/10" onClick={handleTestConnection} disabled={testingConnection}>
+                {testingConnection ? 'Testing...' : 'Test Connection'}
+              </Button>
             </div>
 
             <div className="p-5 rounded-2xl bg-white dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none">

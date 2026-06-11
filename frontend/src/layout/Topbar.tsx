@@ -38,7 +38,7 @@ export const Topbar: React.FC = () => {
           <SearchIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-teal-500 transition-colors" />
           <input 
             type="text" 
-            placeholder="Search leads, phone or signals..."
+            placeholder="Search patients, phone or signals..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-black/5 dark:bg-white/5 border-none rounded-2xl py-2.5 pl-12 pr-6 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all placeholder:text-zinc-400"

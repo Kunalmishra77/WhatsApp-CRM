@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
   Zap, 
   Sparkles, 
@@ -46,17 +46,16 @@ const LeadInsightsPage: React.FC = () => {
   const { from, to, preset } = useRange();
   const range = { from, to };
 
+  const queryClient = useQueryClient();
+
   const { data: summary, isLoading } = useQuery<LeadInsightsSummary>({
     queryKey: ['lead-insights-summary', preset, from, to],
     queryFn: () => dataApi.fetchLeadInsightsSummary(range),
   });
 
   const handleGenerateInsights = () => {
-    toast.promise(new Promise(resolve => setTimeout(resolve, 2000)), {
-      loading: 'Deep-scanning conversation signal matrix...',
-      success: 'Intelligence report synthesized.',
-      error: 'Signal loss detected.',
-    });
+    queryClient.invalidateQueries({ queryKey: ['lead-insights-summary'] });
+    toast.success('Intelligence refreshed.');
   };
 
   return (

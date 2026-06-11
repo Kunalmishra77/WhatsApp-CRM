@@ -20,7 +20,7 @@ const NotFoundPage: React.FC = () => {
         <EmptyState 
           icon={AlertCircle}
           title="404 - Node Not Found"
-          description="The intelligence path you are trying to access does not exist or has been relocated within the IndiaGrain infrastructure."
+          description="The intelligence path you are trying to access does not exist or has been relocated within the Umang Hospital CRM."
           ctaText="Return to Command Center"
           onCtaClick={() => navigate('/')}
         />

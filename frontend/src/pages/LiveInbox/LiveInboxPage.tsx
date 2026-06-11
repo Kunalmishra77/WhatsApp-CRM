@@ -28,12 +28,21 @@ import { RangeControl } from '../../components/Range/RangeControl';
 import { useRange } from '../../state/globalRangeStore';
 import { formatRangeLabel } from '../../utils/dateRange';
 import { dataApi } from '../../data/api';
+import { bGet } from '../../data/backendApi';
 import { cn } from '../../lib/utils';
 
 const LiveInboxPage: React.FC = () => {
   const navigate = useNavigate();
   const { from, to, preset } = useRange();
   const range = { from, to };
+
+  const { data: healthData } = useQuery({
+    queryKey: ['system-health'],
+    queryFn: () => bGet('/health'),
+    refetchInterval: 30000,
+    retry: false,
+  });
+  const isHealthy = healthData?.ok === true;
 
   // Fetch all sessions in range to act as our live stream
   const { data: sessions, isLoading, refetch } = useQuery({
@@ -154,9 +163,9 @@ const LiveInboxPage: React.FC = () => {
                   <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500"><Wifi size={14} /></div>
                   <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Webhook</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-emerald-500">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_currentColor]" />
-                  <span className="text-[9px] font-black uppercase">ONLINE</span>
+                <div className={cn("flex items-center gap-1.5", isHealthy ? "text-emerald-500" : "text-red-500")}>
+                  <div className={cn("w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor]", isHealthy ? "bg-emerald-500" : "bg-red-500")} />
+                  <span className="text-[9px] font-black uppercase">{isHealthy ? "ONLINE" : "OFFLINE"}</span>
                 </div>
               </div>
 
@@ -165,9 +174,9 @@ const LiveInboxPage: React.FC = () => {
                   <div className="w-7 h-7 rounded-lg bg-teal-500/10 flex items-center justify-center text-teal-500"><Zap size={14} /></div>
                   <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">AI Engine</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-teal-500">
-                  <div className="w-1.5 h-1.5 rounded-full bg-teal-500 shadow-[0_0_8px_currentColor]" />
-                  <span className="text-[9px] font-black uppercase">ACTIVE</span>
+                <div className={cn("flex items-center gap-1.5", isHealthy ? "text-teal-500" : "text-red-500")}>
+                  <div className={cn("w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor]", isHealthy ? "bg-teal-500" : "bg-red-500")} />
+                  <span className="text-[9px] font-black uppercase">{isHealthy ? "ACTIVE" : "INACTIVE"}</span>
                 </div>
               </div>
             </div>
