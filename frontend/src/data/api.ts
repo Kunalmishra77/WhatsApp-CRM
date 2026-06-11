@@ -425,7 +425,7 @@ export const dataApi = {
       return intervals.map(interval => {
         const intervalStr = format(interval, 'yyyy-MM-dd');
         const bucket = rawInsights.filter((i: any) => {
-          const d = parseISO(i.created_at);
+          const d = parseISO(i.Timestamp || i.created_at);
           if (intervalType === 'day') return format(d, 'yyyy-MM-dd') === intervalStr;
           if (intervalType === 'week') return isSameWeek(d, interval, { weekStartsOn: 1 });
           if (intervalType === 'month') return isSameMonth(d, interval);
@@ -489,7 +489,7 @@ export const dataApi = {
         return {
           name: i['User Name'] || 'Unknown',
           phone: i['Phone Number'] || 'N/A',
-          time: format(parseISO(i.created_at), 'hh:mm a'),
+          time: format(parseISO(i.Timestamp || i.created_at), 'hh:mm a'),
           status: scoring.bucket,
           score: scoring.score,
           isWorked: !!state?.worked_flag,
@@ -740,13 +740,31 @@ export const dataApi = {
 
       const startDate = startOfDay(parseISO(range.from));
       const endDate = startOfDay(parseISO(range.to));
-      const intervals = eachDayOfInterval({ start: startDate, end: endDate });
+      const diffDays = Math.abs(differenceInDays(endDate, startDate));
 
-      const sentimentTrend = intervals.map(day => {
-        const dStr = format(day, 'yyyy-MM-dd');
-        const bucket = raw.filter((i: any) => format(parseISO(i.created_at), 'yyyy-MM-dd') === dStr);
+      let intervals: Date[];
+      let intervalType: 'day' | 'week' | 'month' = 'day';
+
+      if (diffDays <= 45) {
+        intervals = eachDayOfInterval({ start: startDate, end: endDate });
+        intervalType = 'day';
+      } else if (diffDays <= 180) {
+        intervals = eachWeekOfInterval({ start: startDate, end: endDate }, { weekStartsOn: 1 });
+        intervalType = 'week';
+      } else {
+        intervals = eachMonthOfInterval({ start: startDate, end: endDate });
+        intervalType = 'month';
+      }
+
+      const sentimentTrend = intervals.map(interval => {
+        const bucket = raw.filter((i: any) => {
+          const d = parseISO(i.Timestamp || i.created_at);
+          if (intervalType === 'day') return format(d, 'yyyy-MM-dd') === format(interval, 'yyyy-MM-dd');
+          if (intervalType === 'week') return isSameWeek(d, interval, { weekStartsOn: 1 });
+          return isSameMonth(d, interval);
+        });
         return {
-          name: format(day, 'MMM dd'),
+          name: format(interval, intervalType === 'day' ? 'MMM dd' : intervalType === 'week' ? 'dd MMM' : 'MMM yyyy'),
           pos: bucket.filter((i: any) => i.sentiment?.toLowerCase().includes('pos')).length,
           neu: bucket.filter((i: any) => i.sentiment?.toLowerCase().includes('neu') || (!i.sentiment?.toLowerCase().includes('pos') && !i.sentiment?.toLowerCase().includes('neg'))).length,
           neg: bucket.filter((i: any) => i.sentiment?.toLowerCase().includes('neg')).length,
@@ -878,13 +896,31 @@ export const dataApi = {
 
       const startDate = startOfDay(parseISO(range.from));
       const endDate = startOfDay(parseISO(range.to));
-      const intervals = eachWeekOfInterval({ start: startDate, end: endDate }, { weekStartsOn: 1 });
+      const diffDaysR = Math.abs(differenceInDays(endDate, startDate));
 
-      const performanceTrend = intervals.map(week => {
-        const bucket = rawInsights.filter((i: any) => isSameDay(parseISO(i.created_at), week) || (parseISO(i.created_at) >= startOfWeek(week, { weekStartsOn: 1 }) && parseISO(i.created_at) <= endOfWeek(week, { weekStartsOn: 1 })));
+      let perfIntervals: Date[];
+      let perfType: 'day' | 'week' | 'month' = 'week';
+      if (diffDaysR <= 45) {
+        perfIntervals = eachDayOfInterval({ start: startDate, end: endDate });
+        perfType = 'day';
+      } else if (diffDaysR <= 180) {
+        perfIntervals = eachWeekOfInterval({ start: startDate, end: endDate }, { weekStartsOn: 1 });
+        perfType = 'week';
+      } else {
+        perfIntervals = eachMonthOfInterval({ start: startDate, end: endDate });
+        perfType = 'month';
+      }
+
+      const performanceTrend = perfIntervals.map(interval => {
+        const bucket = rawInsights.filter((i: any) => {
+          const d = parseISO(i.Timestamp || i.created_at);
+          if (perfType === 'day') return format(d, 'yyyy-MM-dd') === format(interval, 'yyyy-MM-dd');
+          if (perfType === 'week') return d >= startOfWeek(interval, { weekStartsOn: 1 }) && d <= endOfWeek(interval, { weekStartsOn: 1 });
+          return isSameMonth(d, interval);
+        });
         const bucketIds = new Set(bucket.map((i: any) => parseInt(i.id)));
         const convInBucket = states.filter((s: any) => bucketIds.has(s.lead_insights_id) && s.status_enum === 'Converted').length;
-        return { name: format(week, 'dd MMM'), signals: bucket.length, conversions: convInBucket };
+        return { name: format(interval, perfType === 'day' ? 'MMM dd' : perfType === 'week' ? 'dd MMM' : 'MMM yyyy'), signals: bucket.length, conversions: convInBucket };
       });
 
       return { conversionRatio, sentimentSplit, engagementMetrics, performanceTrend };
