@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Bell,
   Search as SearchIcon,
   Sun,
   Moon,
@@ -10,6 +9,7 @@ import {
   User as UserIcon,
   Menu
 } from 'lucide-react';
+import { NotificationBell } from '../components/NotificationBell';
 import { Button } from '../ui/Button';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -68,15 +68,8 @@ export const Topbar: React.FC<TopbarProps> = ({ onMobileMenuToggle }) => {
           {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
         </Button>
 
-        {/* Notification bell — no fake badge */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-xl"
-          onClick={() => toast.info('No new notifications')}
-        >
-          <Bell size={17} />
-        </Button>
+        {/* Real notification bell */}
+        <NotificationBell />
 
         <div className="w-px h-5 bg-black/8 dark:bg-white/10 mx-1" />
 
