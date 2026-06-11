@@ -307,9 +307,9 @@ export const proxyService = {
   // ── Lead Insights ──────────────────────────────────────────
   getInsights: async ({ from, to }: { from?: string; to?: string }) => {
     let q = supabase.from('lead_insights').select('*').order('created_at', { ascending: false });
-    // Note: If created_at is not available, we could use Timestamp
-    if (from) q = (q as any).gte('created_at', `${from}T00:00:00Z`);
-    if (to)   q = (q as any).lte('created_at', `${to}T23:59:59Z`);
+    // Use Date column (original conversation date), NOT created_at (sync date which is always today)
+    if (from) q = (q as any).gte('Date', from);
+    if (to)   q = (q as any).lte('Date', to);
     const { data, error } = await q;
     if (error) {
       console.error('📡 Proxy getInsights error:', error);
@@ -373,8 +373,9 @@ export const proxyService = {
   // ── WhatsApp Conversations ─────────────────────────────────
   getConversationsRange: async ({ from, to }: { from?: string; to?: string }) => {
     let q = supabase.from('whatsapp_conversations').select('*').order('Timestamp', { ascending: false });
-    if (from) q = (q as any).gte('Timestamp', `${from}T00:00:00Z`);
-    if (to)   q = (q as any).lte('Timestamp', `${to}T23:59:59Z`);
+    // Use Date column (YYYY-MM-DD) instead of Timestamp ISO comparison — more reliable
+    if (from) q = (q as any).gte('Date', from);
+    if (to)   q = (q as any).lte('Date', to);
     const { data, error } = await q;
     if (error) throw error;
     return data || [];

@@ -39,11 +39,12 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
   const today = new Date().toISOString().slice(0, 10);
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   const { data: liveCount } = useQuery({
-    queryKey: ['sidebar-live-count'],
-    queryFn: () => dataApi.fetchSessions({ from: today, to: today }),
-    refetchInterval: 30000,
+    queryKey: ['sidebar-live-count', today],
+    queryFn: () => dataApi.fetchSessions({ from: sevenDaysAgo, to: today }),
+    refetchInterval: 60000,
     select: (data: any[]) => (data?.length ?? 0),
   });
 
