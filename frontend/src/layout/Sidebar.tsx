@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -11,16 +11,18 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
-  ListTodo
+  ListTodo,
+  X
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { Badge } from '../ui/Badge';
+import { useQuery } from '@tanstack/react-query';
+import { dataApi } from '../data/api';
 
-const NAV_ITEMS: { path: string; label: string; icon: any; badge?: string }[] = [
+const NAV_ITEMS = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/leads', label: 'Leads', icon: Users },
   { path: '/conversations', label: 'Conversations', icon: MessageSquare },
-  { path: '/live-inbox', label: 'Live Inbox', icon: Inbox, badge: '12' },
+  { path: '/live-inbox', label: 'Live Inbox', icon: Inbox, liveCount: true },
   { path: '/lead-insights', label: 'Lead Insights', icon: Zap },
   { path: '/tasks', label: 'Tasks & Follow-ups', icon: ListTodo },
   { path: '/reports', label: 'Reports', icon: BarChart3 },
@@ -28,82 +30,139 @@ const NAV_ITEMS: { path: string; label: string; icon: any; badge?: string }[] = 
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
-export const Sidebar: React.FC = () => {
-  const [collapsed, setCollapsed] = useState(false);
+interface SidebarProps {
+  collapsed: boolean;
+  setCollapsed: (v: boolean) => void;
+  mobileOpen: boolean;
+  setMobileOpen: (v: boolean) => void;
+}
 
-  return (
-    <aside 
-      className={cn(
-        "h-screen flex flex-col transition-all duration-500 bg-white/80 dark:bg-black/80 backdrop-blur-3xl border-r border-black/5 dark:border-white/10 sticky top-0 z-[50]",
-        collapsed ? "w-20" : "w-72"
-      )}
-    >
+export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) => {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: liveCount } = useQuery({
+    queryKey: ['sidebar-live-count'],
+    queryFn: () => dataApi.fetchSessions({ from: today, to: today }),
+    refetchInterval: 30000,
+    select: (data: any[]) => (data?.length ?? 0),
+  });
+
+  const navContent = (
+    <>
       {/* Logo */}
-      <div className="px-6 py-5 flex items-center">
-        {collapsed ? (
-          <div className="w-10 h-10 rounded-2xl bg-orange-500 flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
-            U
-          </div>
-        ) : (
-          <img
-            src="https://umang2-0.vercel.app/Umang-logo.webp"
-            alt="Umang Superspeciality Hospital"
-            className="h-10 w-auto object-contain"
-          />
-        )}
+      <div className="px-6 py-5 flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0">
+          {collapsed ? (
+            <div className="w-10 h-10 rounded-2xl bg-orange-500 flex items-center justify-center text-white font-black text-lg shadow-lg shrink-0">
+              U
+            </div>
+          ) : (
+            <img
+              src="https://umang2-0.vercel.app/Umang-logo.webp"
+              alt="Umang Superspeciality Hospital"
+              className="h-10 w-auto object-contain"
+            />
+          )}
+        </div>
+        {/* Close button — mobile only */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="lg:hidden p-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-zinc-400"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-4 space-y-1.5 py-4">
-        {NAV_ITEMS.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => cn(
-              "flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group relative",
-              isActive 
-                ? "bg-black/5 dark:bg-white/10 text-teal-600 dark:text-teal-400 font-bold" 
-                : "text-zinc-500 hover:bg-black/5 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-zinc-200"
-            )}
-          >
-            {({ isActive }) => (
-              <>
-                <item.icon 
-                  size={20} 
-                  strokeWidth={isActive ? 2.5 : 2}
-                  className={cn(
-                    "shrink-0",
-                    isActive ? "text-teal-600 dark:text-teal-400" : "text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-zinc-300 transition-colors"
+      <nav className="flex-1 px-4 space-y-1 py-2">
+        {NAV_ITEMS.map((item) => {
+          const count = item.liveCount && liveCount ? liveCount : 0;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={() => setMobileOpen(false)}
+              className={({ isActive }) => cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
+                isActive
+                  ? "bg-teal-500/10 text-teal-600 dark:text-teal-400 font-semibold"
+                  : "text-zinc-500 hover:bg-black/5 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-zinc-200"
+              )}
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-teal-500 rounded-full" />
                   )}
-                />
-                {!collapsed && (
-                  <div className="flex-1 flex items-center justify-between">
-                    <span className="text-sm tracking-tight">{item.label}</span>
-                    {item.badge && (
-                      <Badge variant="teal" size="xs" className="rounded-full px-1.5 py-0 min-w-[18px] h-[18px]">
-                        {item.badge}
-                      </Badge>
+                  <item.icon
+                    size={18}
+                    strokeWidth={isActive ? 2.5 : 2}
+                    className={cn(
+                      "shrink-0 ml-1",
+                      isActive ? "text-teal-600 dark:text-teal-400" : "text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors"
                     )}
-                  </div>
-                )}
-                {isActive && (
-                  <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-1.5 h-6 bg-teal-500 rounded-full shadow-[0_0_12px_rgba(20,184,166,0.8)]" />
-                )}
-              </>
-            )}
-          </NavLink>
-        ))}
+                  />
+                  {!collapsed && (
+                    <div className="flex-1 flex items-center justify-between min-w-0">
+                      <span className="text-sm tracking-tight truncate">{item.label}</span>
+                      {count > 0 && (
+                        <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold bg-teal-500 text-white rounded-full min-w-[18px] text-center">
+                          {count > 99 ? '99+' : count}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
 
-      {/* Collapse Toggle */}
-      <div className="p-4 border-t border-black/5 dark:border-white/5">
-        <button 
+      {/* Collapse Toggle — desktop only */}
+      <div className="hidden lg:block p-4 border-t border-black/5 dark:border-white/5">
+        <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center p-3 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-500"
+          className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-400 text-xs font-semibold"
         >
-          {collapsed ? <ChevronRight size={20} /> : <div className="flex items-center gap-3"><ChevronLeft size={20} /> <span className="text-xs font-black uppercase tracking-widest">Collapse</span></div>}
+          {collapsed
+            ? <ChevronRight size={18} />
+            : <><ChevronLeft size={18} /><span className="uppercase tracking-widest text-[10px]">Collapse</span></>
+          }
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside
+        className={cn(
+          "hidden lg:flex h-screen flex-col transition-all duration-300 bg-white dark:bg-[#111] border-r border-black/5 dark:border-white/10 sticky top-0 z-[50] shrink-0",
+          collapsed ? "w-[68px]" : "w-64"
+        )}
+      >
+        {navContent}
+      </aside>
+
+      {/* Mobile Overlay */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile Drawer */}
+      <aside
+        className={cn(
+          "lg:hidden fixed top-0 left-0 h-full w-72 flex flex-col bg-white dark:bg-[#111] border-r border-black/5 dark:border-white/10 z-[70] transition-transform duration-300 shadow-2xl",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {navContent}
+      </aside>
+    </>
   );
 };

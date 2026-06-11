@@ -170,7 +170,7 @@ const DashboardPage: React.FC = () => {
       />
 
       {/* KPI Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
         {kpiCards.map((kpi, i) => (
           <motion.div 
             key={kpi.title}
@@ -207,7 +207,7 @@ const DashboardPage: React.FC = () => {
          </h3>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
         {[
           { label: 'Incoming Chats', value: waPulse?.incomingChats, icon: MessageSquare, filter: 'all' },
           { label: 'Active Sessions', value: waPulse?.activeSessions, icon: Activity, filter: 'active' },
